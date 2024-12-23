@@ -5,5 +5,4 @@
 ### it contains most of the problems solved in dsa and more,
 ### explore the trash bin to know more or find your intreast.
 
-# Thank 's for visiting
-## visit Again
+# Thank you
