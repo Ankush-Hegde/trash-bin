@@ -1,0 +1,16 @@
+import random
+
+list= ['a','b','c','d','e','f','g','h']
+
+def shuffle(x):
+	print(x)
+	random.shuffle(x)
+	print(x)
+def choice(x):
+	print(x)
+	print(random.choice(x))
+
+print("enter ur choice\n1.shuffel\n2.choice")
+num=int(input())
+shuffle
+#choice(list)
