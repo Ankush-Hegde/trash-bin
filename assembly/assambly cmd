@@ -1,0 +1,12 @@
+vim filename.asm 
+                 //make a file
+                 
+nasm -f elf64 -o hello.o hello.asm 
+                                  // -o is for outputfile 
+                                  // hello.o is a object file
+                                  // hello.asm is input file
+
+ld hello.o -o hello
+                    //to link the file with object code
+./hello
+        //execuit file
