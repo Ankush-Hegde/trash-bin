@@ -25,7 +25,7 @@ type Response struct {
 	Result int `json:"result"`
 }
 
-func mainn() {
+func main() {
 	http.HandleFunc("/ping", pingHandler)
 	http.HandleFunc("/square", squareHandler)
 

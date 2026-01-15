@@ -35,7 +35,7 @@ func (s *SafeMap) Delete(key string) {
 	delete(s.data, key)
 }
 
-func RWMutexfunction() {
+func main() {
 	safeMap := NewSafeMap()
 	var wg sync.WaitGroup
 

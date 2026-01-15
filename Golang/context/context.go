@@ -20,10 +20,10 @@ func longRunningTask(ctx context.Context) {
 	}
 }
 
-func mainnn() {
+func main() {
 	// Create a context with a 2-second timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel() // Ensure resources are released
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second) // increase to more than 3 sec for task to complet
+	defer cancel()                                                          // Ensure resources are released
 
 	fmt.Println("Starting task...")
 	longRunningTask(ctx)

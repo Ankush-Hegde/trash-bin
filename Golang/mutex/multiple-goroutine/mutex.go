@@ -19,7 +19,7 @@ func increment(wg *sync.WaitGroup) {
 	}
 }
 
-func functionformutex() {
+func main() {
 	var wg sync.WaitGroup
 	numGoroutines := 10
 

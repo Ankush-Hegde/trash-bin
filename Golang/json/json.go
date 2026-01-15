@@ -12,7 +12,7 @@ type Person struct {
 	Address string `json:"address"`
 }
 
-func mainssss() {
+func main() {
 	// Example struct
 	person := Person{
 		Name:    "Alice",

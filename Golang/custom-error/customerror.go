@@ -31,7 +31,7 @@ func Divide(numerator, denominator int) (int, error) {
 	return numerator / denominator, nil
 }
 
-func mainsss() {
+func main() {
 	// Test cases
 	results := []struct {
 		numerator   int

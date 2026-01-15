@@ -12,7 +12,7 @@ func printMessage(msg string, wg *sync.WaitGroup) {
 	}
 }
 
-func notmain2() {
+func main() {
 	var wg sync.WaitGroup
 
 	wg.Add(2) // Add a goroutine to the WaitGroup

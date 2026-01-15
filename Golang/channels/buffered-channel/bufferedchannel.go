@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-func bufferedChannel() {
+func main() {
 	c := make(chan int, 2) // Buffered channel with capacity 2
 
 	c <- 10

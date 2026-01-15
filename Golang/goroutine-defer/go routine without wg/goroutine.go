@@ -12,7 +12,7 @@ func printMessage1(msg string) {
 	}
 }
 
-func notmain() {
+func main() {
 	defer fmt.Println("hello")               // executes last, due to its LIFO, used in closing db connection and closing file
 	go printMessage1("Hello from Goroutine") // here main function ends before go routin ends, use sync or time to keep the goroutine running
 	// printMessage("Hello from Main")

@@ -1,6 +1,7 @@
 package main
 
-func passNumFromOneToAnother() {
+// pass value from one channel to another
+func main() {
 	print("started")
 	channel := make(chan int, 10)
 

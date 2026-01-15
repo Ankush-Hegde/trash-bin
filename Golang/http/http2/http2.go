@@ -5,8 +5,8 @@ import (
 	"net/http"
 )
 
-func mainss() {
-	http.HandleFunc("/ping", pingHandler)
+func main() {
+	http.HandleFunc("/ping", pingHandlers)
 
 	fmt.Println("Starting server on :8080...")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
