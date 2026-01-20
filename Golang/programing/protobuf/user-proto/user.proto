@@ -1,0 +1,52 @@
+syntax = "proto3"; // mandatory, proto3 is modern one and proto2 is legacy
+
+package user; // Avoids name collisions
+
+option go_package = "github.com/skull/yourproject/user;user"; // this is only for go generation```option go_package = "<import_path>;<package_name>";```
+
+import "google/protobuf/timestamp.proto"; // import common types if needed
+
+// define message
+// Field numbers must be unique within message
+// - must not change once published,
+// - start from 1 (0 is reserved)
+// - order does not matter
+message User {
+    int32 id = 1;
+    string name = 2;
+    optional string email = 3; // optional-> if field can absent 
+    Address address = 4; // nested message address
+    repeated string favorites = 5; // repeated is array in proto,ex "json representation:  "favorites": ["apple", "banana"], if not set empty [] is sent
+    Role role = 6; 
+    google.protobuf.Timestamp created_at = 7;
+}
+
+message Address {
+  string city = 1;
+  string country = 2;
+}
+
+// enum starts with zero
+enum Role {
+  ROLE_UNSPECIFIED = 0; // 0 is required as it is for default/unknown
+  ROLE_ADMIN = 1;
+  ROLE_USER = 2;
+}
+
+// above is the protobuf
+// ---- gRPC specific definitions ----
+/* below code is only required for the GRPC */
+
+// every GRPC need request and response message
+
+message GetUserRequest {
+  int32 user_id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+service UserService {
+  rpc GetUser (GetUserRequest) returns (GetUserResponse); // rpc MethodName (RequestMessage) returns (ResponseMessage);
+}
