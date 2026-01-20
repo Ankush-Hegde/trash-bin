@@ -1,0 +1,13 @@
+// install protobuf compiler 
+sudo apt install protobuf-compiler 
+
+// install this plugins
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+
+// generate go code and grpc file
+protoc --go_out=. --go-grpc_out=. user.proto 
+
+// if you are giving path get it from "go env GOPATH", replace /home/skull/go with GOPATH
+protoc --plugin=protoc-gen-go=/home/skull/go/bin/protoc-gen-go --plugin=protoc-gen-go-grpc=/home/skull/go/bin/protoc-gen-go-grpc --g
+o_out=. --go-grpc_out=. user.proto
