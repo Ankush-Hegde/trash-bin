@@ -1,0 +1,14 @@
+{
+  "details": {
+    "endpoint": "http://localhost:50051",
+    "methodFqn": "user.UserService.GetUser"
+  },
+  "requests": [
+    {
+      "location": "GetUser-request.json"
+    }
+  ],
+  "operationType": "unary",
+  "invokerName": "grpc",
+  "importStreamId": "b290f67d-cad8-4468-843f-f121709eb2d2"
+}
