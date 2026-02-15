@@ -2,10 +2,16 @@ package main
 
 import "fmt"
 
+// you can restrict any by using constraints or [T int | float64] instead of [T any]
 type List[T any] struct {
 	next *List[T]
 	val  T
 }
+
+// before go 1.18, there is no generic so we have to go with below aproach
+// type List struct {
+//     val interface{}
+// }
 
 func (l *List[T]) Push(val T) {
 	newNode := &List[T]{val: val}
