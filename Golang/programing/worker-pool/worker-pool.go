@@ -1,9 +1,10 @@
 package main
 
-// You create a fixed number of workers
+// fixed or dynamic number of workers
 // Workers continuously pick up tasks from a queue
 // Tasks are processed in parallel
 // Workers are reused, instead of creating new ones for every task
+// here the workers are not dynamic
 
 import (
 	"fmt"
