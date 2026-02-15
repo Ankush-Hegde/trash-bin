@@ -11,6 +11,7 @@ type Vertex struct {
 
 // method can be defined with pointer like *vertex.
 // refer this doc https://go.dev/tour/methods/7
+// https://go.dev/tour/methods/9
 func (v Vertex) Abs() float64 {
 	return math.Sqrt(v.X*v.X + v.Y*v.Y)
 }
