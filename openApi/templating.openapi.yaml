@@ -1,0 +1,27 @@
+openapi: 3.0.3
+info:
+  title: User Service API
+  version: 1.0.0
+  description: API for managing users
+
+servers:
+  - url: '{protocol}://{environment}.example.com/v1' # you can keep it as dynamic values
+    variables:
+      protocol:
+        enum:
+          - http
+          - https
+        default: https
+      environment:
+        default: api    # Production server
+        enum:
+          - api         # Production server
+          - api.dev     # Development server
+          - api.staging # Staging server
+
+paths:
+  /files:
+    description: File upload and download operations
+    servers:
+      - url: https://files.example.com # overides the base url over here
+        description: Override base path for all operations with the /files path

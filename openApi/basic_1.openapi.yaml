@@ -1,0 +1,74 @@
+openapi: 3.0.4 # The OpenAPI version defines the overall structure of an API definition 
+info: # contains API information
+  title: Sample API # name of the repo
+  description: Optional multiline or single-line description in [CommonMark](http://commonmark.org/help/) or HTML.
+  version: 0.1.0 # server api versioning
+
+servers: # contains the base url
+  - url: https://api.example.com/v1
+    description: Optional server description, e.g. Main (production) server
+  - url: http://api.example.dev.com/v1
+    description: dev server
+  - url: http://api.example.nonprod.com/v1
+    description: non-prod server
+  - url: http://staging-api.example.com
+    description: Optional server description, e.g. Internal staging server for testing
+
+paths: # contains all api paths
+  /users: # user endpoint
+    get: # method
+      summary: Get all users
+      responses: # response
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+    post: # method
+      summary: Create a user
+      requestBody: # request body
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses: # response
+        '201':
+          description: User created
+
+  /users/{id}: # another endpoint
+    get: # method
+      summary: Get user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+
+      responses: # response
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+components: # components 
+  schemas: # every endpoint can use this, which is defined inside it. like user schema
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+      required:
+        - name
+        - email
