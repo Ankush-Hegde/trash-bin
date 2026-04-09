@@ -155,3 +155,46 @@ Here are a few more string operations. JSON.STRLEN tells you the length of the s
 "[\"Hyperion (Enduro bikes)\"]"
 ```
 
+Numbers can be incremented and multiplied:
+
+```
+> JSON.SET crashes $ 0
+OK
+> JSON.NUMINCRBY crashes $ 1
+"[1]"
+> JSON.NUMINCRBY crashes $ 1.5
+"[2.5]"
+> JSON.NUMINCRBY crashes $ -0.75
+"[1.75]"
+> JSON.NUMMULTBY crashes $ 24
+"[42]"
+```
+
+#### JSONPath support
+
+RedisJSON v2.0 introduced JSONPath support
+
+If you want to include double quotes in a query from the CLI, enclose the JSONPath within single quotes. For example:
+
+```
+JSON.GET store '$.inventory["mountain_bikes"]'
+```
+
+#### JSONPath syntax 
+
+The following JSONPath syntax table was adapted from Goessner's path syntax comparison.
+
+| Syntax element	| Description |
+|-------------------|-------------|
+|$	| The root (outermost JSON element), starts the path.|
+|. or []	| Selects a child element.|
+|..	|Recursively descends through the JSON document.|
+|*	|Wildcard, returns all elements.|
+|[]	|Subscript operator, accesses an array element.|
+|[,] |	Union, selects multiple elements.|
+|[start:end:step] |	Array slice where start, end, and step are index values. You can omit values from the slice (for example, [3:], [:8:2]) to use the default values: start defaults to the first index, end defaults to the last index, and step defaults to 1. Use [*] or [:] to select all elements.|
+|?() |	Filters a JSON object or array. Supports comparison operators (==, !=, <, <=, >, >=, =~), logical operators (&&, ||), and parenthesis ((, )).|
+|() |	Script expression. |
+|@ |	The current element, used in filter or script expressions.|
+
+json Path allowes to edit the json data in between
