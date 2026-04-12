@@ -198,3 +198,119 @@ The following JSONPath syntax table was adapted from Goessner's path syntax comp
 |@ |	The current element, used in filter or script expressions.|
 
 json Path allowes to edit the json data in between
+
+### 🔸Lists (Queue / Stack)
+
+Redis lists are linked lists of string values. Redis lists are frequently used to:
+
+- Implement stacks and queues.
+- Build queue management for background worker systems
+
+Examples <br>
+#### Treat a list like a queue (first in, first out):
+
+Syntax
+```
+$> LPUSH <variable_key> <Value_1>
+(integer) 1
+$> LPUSH <variable_key> <Value_2> 
+(integer) 2
+$> RPOP <variable_key>
+<Value_1>
+$> RPOP <variable_key>
+<Value_2>
+```
+
+#### Treat a list like a stack (first in, last out):
+
+Syntax
+```
+$> LPUSH <variable_key> <Value_1>
+(integer) 1
+$> LPUSH <variable_key> <Value_2> 
+(integer) 2
+$> LPOP <variable_key>
+<Value_2>
+$> LPOP <variable_key>
+<Value_1>
+```
+NOTE: you can even use RPUSH RPOP instead. push and pop can be done from both the end.
+#### Check the length of a list:
+```
+$> LLEN <variable_key>
+(integer) 0
+```
+#### Atomically pop an element from one list and push to another:
+
+```
+> LPUSH <variable_key_1> <Value_1>
+(integer) 1
+> LPUSH <variable_key_1> <Value_2>
+(integer) 2
+> LMOVE <variable_key_1> <variable_key_2> LEFT LEFT
+"<Value_2>"
+> LRANGE <variable_key_1> 0 -1
+1) "<Value_1>"
+> LRANGE <variable_key_2> 0 -1
+1) "<Value_2>"
+```
+
+#### To limit the length of a list you can call LTRIM:
+and the LRANGE command extracts ranges of elements from lists:
+```
+> DEL <variable_key_1>
+(integer) 1
+> RPUSH <variable_key_1> <Value_1> <Value_2> <Value_3> <Value_4> <Value_5>
+(integer) 5
+> LTRIM <variable_key_1> 0 2
+OK
+> LRANGE <variable_key_1> 0 -1
+1) "<Value_1>"
+2) "<Value_2>"
+3) "<Value_3>"
+```
+
+#### Blocking operations on lists 
+Lists have a special feature that make them suitable to implement queues, and in general as a building block for inter process communication systems: blocking operations.
+
+Imagine you want to push items into a list with one process, and use a different process in order to actually do some kind of work with those items. This is the usual producer / consumer setup, and can be implemented in the following simple way:
+
+To push items into the list, producers call LPUSH.
+To extract / process items from the list, consumers call RPOP.
+However it is possible that sometimes the list is empty and there is nothing to process, so RPOP just returns NULL. In this case a consumer is forced to wait some time and retry again with RPOP. This is called polling, and is not a good idea in this context because it has several drawbacks:
+
+Forces Redis and clients to process useless commands (all the requests when the list is empty will get no actual work done, they'll just return NULL).
+Adds a delay to the processing of items, since after a worker receives a NULL, it waits some time. To make the delay smaller, we could wait less between calls to RPOP, with the effect of amplifying problem number 1, i.e. more useless calls to Redis.
+So Redis implements commands called BRPOP and BLPOP which are versions of RPOP and LPOP able to block if the list is empty: they'll return to the caller only when a new element is added to the list, or when a user-specified timeout is reached.
+
+This is an example of a BRPOP call we could use in the worker:
+
+```
+> RPUSH <variable_key_1> <Value_1> <Value_2>
+(integer) 2
+> BRPOP <variable_key_1> 1
+1) "<variable_key_1>"
+2) "<Value_2>"
+> BRPOP <variable_key_1> 1
+1) "<variable_key_1>"
+2) "<Value_1>"
+> BRPOP <variable_key_1> 1 // keeping 1 sec timeout
+(nil)
+(2.01s)
+> BRPOP <variable_key_1> 5 // keeping 5 sec timeout
+(nil)
+(6.01s)
+```
+It means: "wait for elements in the list bikes:repairs, but return if after 1 second no element is available".
+
+Note that you can use 0 as timeout to wait for elements forever, and you can also specify multiple lists and not just one, in order to wait on multiple lists at the same time, and get notified when the first list receives an element.
+
+A few things to note about BRPOP:
+
+Clients are served in an ordered way: the first client that blocked waiting for a list, is served first when an element is pushed by some other client, and so forth.
+The return value is different compared to RPOP: it is a two-element array since it also includes the name of the key, because BRPOP and BLPOP are able to block waiting for elements from multiple lists.
+If the timeout is reached, NULL is returned.
+
+#### NOTE: The maximum length of a Redis list is 2^32 - 1 (4,294,967,295) elements.
+
+### 🔸Sets (Unique values)
