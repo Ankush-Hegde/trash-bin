@@ -351,4 +351,211 @@ How many bikes are racing in France?
 (integer) 3
 ```
 
-### 🔸4. Hashes (Objects)
+### 🔸Hashes (Objects)
+Redis hashes are record types structured as collections of field-value pairs. You can use hashes to represent basic objects and to store groupings of counters, among other things.
+```
+> HSET user:1 name "Alice" age 25
+(integer) 2
+
+> HGET user:1 name
+"Alice"
+
+> HGETALL user:1
+1) "name"
+2) "Alice"
+3) "age"
+4) "25"
+
+> HMGET user:1 name age no-such-field // multiple get
+1) "Alice"
+2) "25"
+3) (nil)
+
+> HINCRBY user:1 age 1
+(integer) 26
+> HINCRBY user:1 age -1
+(integer) 25
+
+> HINCRBY user:1 score 1
+(integer) 1
+> HINCRBY user:1 score 1
+(integer) 2
+> HINCRBY user:1 score 1
+(integer) 3
+
+> HMGET user:1 score
+1) "3"
+```
+#### Field expiration 
+Redis 7.4 introduced the ability to specify an expiration time or a time-to-live (TTL) value for individual hash fields. This capability is comparable to key expiration and includes a number of similar commands.
+
+Use the following commands to set either an exact expiration time or a TTL value for specific fields:
+
+HEXPIRE: set the remaining TTL in seconds.
+HPEXPIRE: set the remaining TTL in milliseconds.
+HEXPIREAT: set the expiration time to a timestamp1 specified in seconds.
+HPEXPIREAT: set the expiration time to a timestamp specified in milliseconds.
+Use the following commands to retrieve either the exact time when or the remaining TTL until specific fields will expire:
+
+HEXPIRETIME: get the expiration time as a timestamp in seconds.
+HPEXPIRETIME: get the expiration time as a timestamp in milliseconds.
+HTTL: get the remaining TTL in seconds.
+HPTTL: get the remaining TTL in milliseconds.
+Use the following command to remove the expiration of specific fields:
+
+HPERSIST: remove the expiration.
+Redis 8.0 introduced the following commands:
+
+HGETEX: Get the value of one or more fields of a given hash key and optionally set their expiration time or time-to-live (TTL).
+HSETEX: Set the value of one or more fields of a given hash key and optionally set their expiration time or time-to-live (TTL).
+
+#### LIMITS: 
+Every hash can store up to 4,294,967,295 (2^32 - 1) field-value pairs. In practice, your hashes are limited only by the overall memory on the VMs hosting your Redis deployment.
+
+### 🔸Sorted Sets (VERY IMPORTANT)
+
+A Redis sorted set is a collection of unique strings (members) ordered by an associated score. When more than one string has the same score, the strings are ordered lexicographically. Some use cases for sorted sets include:
+
+Leaderboards. For example, you can use sorted sets to easily maintain ordered lists of the highest scores in a massive online game.
+Rate limiters. In particular, you can use a sorted set to build a sliding-window rate limiter to prevent excessive API requests.
+
+```
+> ZADD leaderboard  10 "Norem"
+(integer) 1
+> ZADD leaderboard  12 "Castilla"
+(integer) 1
+> ZADD leaderboard  8 "Sam-Bodden" 10 "Royce" 6 "Ford" 14 "Prickett"
+(integer) 4
+
+> ZRANGE leaderboard 0 -1
+1) "Ford"
+2) "Sam-Bodden"
+3) "Norem"
+4) "Royce"
+5) "Castilla"
+6) "Prickett"
+
+> ZREVRANGE leaderboard 0 -1
+1) "Prickett"
+2) "Castilla"
+3) "Royce"
+4) "Norem"
+5) "Sam-Bodden"
+6) "Ford"
+```
+
+Note: 0 and -1 means from element index 0 to the last element (-1 works here just as it does in the case of the LRANGE command).
+
+It is possible to return scores as well, using the WITHSCORES argument:
+```
+> ZRANGE leaderboard 0 -1 withscores
+ 1) "Ford"
+ 2) "6"
+ 3) "Sam-Bodden"
+ 4) "8"
+ 5) "Norem"
+ 6) "10"
+ 7) "Royce"
+ 8) "10"
+ 9) "Castilla"
+10) "12"
+11) "Prickett"
+12) "14"
+```
+
+#### Operating on ranges
+Sorted sets are more powerful than this. They can operate on ranges. Let's get all the racers with 10 or fewer points. We use the ZRANGEBYSCORE command to do it:
+
+```
+> ZRANGEBYSCORE leaderboard -inf 10
+1) "Ford"
+2) "Sam-Bodden"
+3) "Norem"
+4) "Royce"
+```
+
+We asked Redis to return all the elements with a score between negative infinity and 10 (both extremes are included).
+
+To remove an element we'd simply call ZREM with the racer's name. It's also possible to remove ranges of elements. Let's remove racer Castilla along with all the racers with strictly fewer than 10 points:
+
+```
+> ZREM leaderboard "Castilla"
+(integer) 1
+> ZREMRANGEBYSCORE leaderboard -inf 9
+(integer) 2
+> ZRANGE leaderboard 0 -1
+1) "Norem"
+2) "Royce"
+3) "Prickett"
+```
+Another extremely useful operation defined for sorted set elements is the get-rank operation. It is possible to ask what is the position of an element in the set of ordered elements. The ZREVRANK command is also available in order to get the rank, considering the elements sorted in a descending way.
+```
+
+> ZRANK leaderboard "Norem"
+(integer) 0
+> ZREVRANK leaderboard "Norem"
+(integer) 2
+```
+## ⚡CACHING (REAL PRO UNDERSTANDING)
+Cache-Aside (Most used) <br>
+flow
+```
+User → API → Redis → DB
+```
+
+## 🚦 RATE LIMITING (REAL SYSTEM DESIGN)
+
+```
+INCR user:1
+EXPIRE user:1 60 // expair it in 60sec
+```
+
+## 📡 PUB/SUB (REAL-TIME SYSTEM)
+Example:<br>
+Terminal 1:
+```
+SUBSCRIBE chat
+```
+Terminal 2:
+```
+PUBLISH chat "hello"
+```
+subscriber will receive message from the publisher, only publisher can send the message <br>
+👉 Instant message delivery<br>
+
+⚠️ Limitation:<br>
+Messages are NOT stored<br>
+If subscriber is offline → lost
+
+👉 Solution:<br>
+Use Streams
+
+## 🧠 REDIS PERSISTENCE (VERY IMPORTANT)
+
+Redis is NOT just memory — it can persist.
+
+🔸 RDB (Snapshots)
+- Saves data every X seconds
+- Lightweight
+
+👉 Good for backups
+
+🔸 AOF (Append Only File)
+- Logs every write operation
+
+👉 More durable
+
+Best Practice:
+
+Use BOTH
+
+## 🧠 MEMORY MANAGEMENT
+Eviction Policies:
+
+When memory is full:
+
+- noeviction
+- allkeys-lru (best)
+- volatile-lru
+
+👉 LRU = Least Recently Used
