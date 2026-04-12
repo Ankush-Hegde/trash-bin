@@ -314,3 +314,41 @@ If the timeout is reached, NULL is returned.
 #### NOTE: The maximum length of a Redis list is 2^32 - 1 (4,294,967,295) elements.
 
 ### 🔸Sets (Unique values)
+A Redis set is an unordered collection of unique strings (members). You can use Redis sets to efficiently:
+
+Track unique items (e.g., track all unique IP addresses accessing a given blog post).
+Represent relations (e.g., the set of all users with a given role).
+Perform common set operations such as intersection, unions, and differences.
+
+Examples 
+Store the sets of bikes racing in France and the USA. Note that if you add a member that already exists, it will be ignored.
+
+```
+> SADD bikes:racing:france bike:1
+(integer) 1
+> SADD bikes:racing:france bike:1
+(integer) 0
+> SADD bikes:racing:france bike:2 bike:3
+(integer) 2
+> SADD bikes:racing:usa bike:1 bike:4
+(integer) 2
+```
+Check whether bike:1 or bike:2 are racing in the US.
+```
+> SISMEMBER bikes:racing:usa bike:1
+(integer) 1
+> SISMEMBER bikes:racing:usa bike:2
+(integer) 0
+```
+Which bikes are competing in both races?
+```
+> SINTER bikes:racing:france bikes:racing:usa
+1) "bike:1"
+```
+How many bikes are racing in France?
+```
+> SCARD bikes:racing:france
+(integer) 3
+```
+
+### 🔸4. Hashes (Objects)
