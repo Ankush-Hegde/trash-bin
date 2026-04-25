@@ -308,3 +308,294 @@ Depending on your upload speeds, this may take a moment to push.
 
 </dev>
 </details>
+
+=================================================================
+
+### ✍🏼 Docker Concepts
+
+<details> <summary>
+Docker Basic
+</summary>
+
+<dev> 
+
+- What is a container?
+
+   Imagine you're developing a killer web app that has three main components - a React frontend, a Python API, and a PostgreSQL database. If you wanted to work on this project, you'd have to install Node, Python, and PostgreSQL.
+
+   How do you make sure you have the same versions as the other developers on your team? Or your CI/CD system? Or what's used in production?
+
+   How do you ensure the version of Python (or Node or the database) your app needs isn't affected by what's already on your machine? How do you manage potential conflicts?
+
+   Enter containers!
+
+   What is a container? Simply put, containers are isolated processes for each of your app's components. Each component - the frontend React app, the Python API engine, and the database - runs in its own isolated environment, completely isolated from everything else on your machine.
+
+   Here's what makes them awesome. Containers are:
+
+   - Self-contained. Each container has everything it needs to function with no reliance on any pre-installed dependencies on the host machine.
+   - Isolated. Since containers run in isolation, they have minimal influence on the host and other containers, increasing the security of your applications.
+   - Independent. Each container is independently managed. Deleting one container won't affect any others.
+   - Portable. Containers can run anywhere! The container that runs on your development machine will work the same way in a data center or anywhere in the cloud!
+
+
+- What is an image?
+
+   Seeing as a container is an isolated process, where does it get its files and configuration? How do you share those environments?
+
+   That's where container images come in. A container image is a standardized package that includes all of the files, binaries, libraries, and configurations to run a container.
+
+   For a PostgreSQL image, that image will package the database binaries, config files, and other dependencies. For a Python web app, it'll include the Python runtime, your app code, and all of its dependencies.
+
+   There are two important principles of images:
+
+   - Images are immutable. Once an image is created, it can't be modified. You can only make a new image or add changes on top of it.
+
+   - Container images are composed of layers. Each layer represents a set of file system changes that add, remove, or modify files.
+
+   These two principles let you to extend or add to existing images. For example, if you are building a Python app, you can start from the Python image and add additional layers to install your app's dependencies and add your code. This lets you focus on your app, rather than Python itself.
+
+   Try it out
+
+   1. Open a terminal and search for images using the ```docker search``` command:
+      ```
+      docker search docker/welcome-to-docker
+      ```
+
+      You will see output like the following:
+      ```
+      NAME                       DESCRIPTION                                     STARS     OFFICIAL
+      docker/welcome-to-docker   Docker image for new users getting started w…   20
+      ```
+
+      This output shows you information about relevant images available on Docker Hub.
+
+   2. Pull the image using the ```docker pull``` command.
+      ```
+      docker pull docker/welcome-to-docker
+      ```
+      You will see output like the following:
+
+
+      ```
+      Using default tag: latest
+      latest: Pulling from docker/welcome-to-docker
+      579b34f0a95b: Download complete
+      d11a451e6399: Download complete
+      1c2214f9937c: Download complete
+      b42a2f288f4d: Download complete
+      54b19e12c655: Download complete
+      1fb28e078240: Download complete
+      94be7e780731: Download complete
+      89578ce72c35: Download complete
+      Digest: sha256:eedaff45e3c78538087bdd9dc7afafac7e110061bbdd836af4104b10f10ab693
+      Status: Downloaded newer image for docker/welcome-to-docker:latest
+      docker.io/docker/welcome-to-docker:latest
+      ```
+
+      Each of line represents a different downloaded layer of the image. Remember that each layer is a set of filesystem changes and provides functionality of the image.
+
+   Learn about the image
+   1. List your downloaded images using the ```docker image ls ```command:
+      ```
+      docker image ls
+      ```
+      You will see output like the following:
+      ```
+      REPOSITORY                 TAG       IMAGE ID       CREATED        SIZE
+      docker/welcome-to-docker   latest    eedaff45e3c7   4 months ago   29.7MB
+      ```
+      The command shows a list of Docker images currently available on your system. The ```docker/welcome-to-docker``` has a total size of approximately 29.7MB.
+
+      ```
+      Image size
+
+      The image size represented here reflects the uncompressed size of the image, not the download size of the layers.
+      ```
+
+   2. List the image's layers using the docker image history command:
+      ```
+      docker image history docker/welcome-to-docker
+      ```
+      You will see output like the following:
+
+      ```
+      IMAGE          CREATED        CREATED BY                                      SIZE      COMMENT
+      648f93a1ba7d   4 months ago   COPY /app/build /usr/share/nginx/html # buil…   1.6MB     buildkit.dockerfile.v0
+      <missing>      5 months ago   /bin/sh -c #(nop)  CMD ["nginx" "-g" "daemon…   0B
+      <missing>      5 months ago   /bin/sh -c #(nop)  STOPSIGNAL SIGQUIT           0B
+      <missing>      5 months ago   /bin/sh -c #(nop)  EXPOSE 80                    0B
+      <missing>      5 months ago   /bin/sh -c #(nop)  ENTRYPOINT ["/docker-entr…   0B
+      <missing>      5 months ago   /bin/sh -c #(nop) COPY file:9e3b2b63db9f8fc7…   4.62kB
+      <missing>      5 months ago   /bin/sh -c #(nop) COPY file:57846632accc8975…   3.02kB
+      <missing>      5 months ago   /bin/sh -c #(nop) COPY file:3b1b9915b7dd898a…   298B
+      <missing>      5 months ago   /bin/sh -c #(nop) COPY file:caec368f5a54f70a…   2.12kB
+      <missing>      5 months ago   /bin/sh -c #(nop) COPY file:01e75c6dd0ce317d…   1.62kB
+      <missing>      5 months ago   /bin/sh -c set -x     && addgroup -g 101 -S …   9.7MB
+      <missing>      5 months ago   /bin/sh -c #(nop)  ENV PKG_RELEASE=1            0B
+      <missing>      5 months ago   /bin/sh -c #(nop)  ENV NGINX_VERSION=1.25.3     0B
+      <missing>      5 months ago   /bin/sh -c #(nop)  LABEL maintainer=NGINX Do…   0B
+      <missing>      5 months ago   /bin/sh -c #(nop)  CMD ["/bin/sh"]              0B
+      <missing>      5 months ago   /bin/sh -c #(nop) ADD file:ff3112828967e8004…   7.66MB
+      ```
+
+      This output shows you all of the layers, their sizes, and the command used to create the layer.
+
+- What is a registry?
+
+   Now that you know what a container image is and how it works, you might wonder - where do you store these images?
+
+   Well, you can store your container images on your computer system, but what if you want to share them with your friends or use them on another machine? That's where the image registry comes in.
+
+   An image registry is a centralized location for storing and sharing your container images. It can be either public or private. Docker Hub is a public registry that anyone can use and is the default registry.
+
+   While Docker Hub is a popular option, there are many other available container registries available today, including Amazon Elastic Container Registry (ECR), Azure Container Registry (ACR), and Google Container Registry (GCR). You can even run your private registry on your local system or inside your organization. For example, Harbor, JFrog Artifactory, GitLab Container registry etc.
+
+   Registry vs. repository
+   While you're working with registries, you might hear the terms registry and repository as if they're interchangeable. Even though they're related, they're not quite the same thing.
+
+   A registry is a centralized location that stores and manages container images, whereas a repository is a collection of related container images within a registry. Think of it as a folder where you organize your images based on projects. Each repository contains one or more container images.
+
+   The following diagram shows the relationship between a registry, repositories, and images.
+
+   ![registry](registry.png)
+
+   Try it out
+
+   1. Run the following command to build a Docker image, swapping out YOUR_DOCKER_USERNAME with your username.
+
+      ```
+      docker build -t <YOUR_DOCKER_USERNAME>/docker-quickstart .
+      ```
+
+   2. Run the following command to list the newly created Docker image:
+      ```
+      docker images
+      ```
+      You will see output like the following:
+      ```
+      REPOSITORY                                 TAG       IMAGE  ID       CREATED         SIZE
+      <YOUR_DOCKER_USERNAME>/docker-quickstart   latest    476de364f70e   2 minutes ago   170MB
+      ```
+   3. Start a container to test the image by running the following command (swap out the username with your own username):
+      ```
+      docker run -d -p 8080:8080 <YOUR_DOCKER_USERNAME>/docker-quickstart 
+      ```
+      You can verify if the container is working by visiting http://localhost:8080 with your browser.
+
+   4. Use the docker tag command to tag the Docker image. Docker tags allow you to label and version your images.
+      ```
+      docker tag <YOUR_DOCKER_USERNAME>/docker-quickstart         <YOUR_DOCKER_USERNAME>/docker-quickstart:1.0 
+      ```
+   5. Finally, it's time to push the newly built image to your Docker Hub repository by using the docker push command:
+      ```
+      docker push <YOUR_DOCKER_USERNAME>/docker-quickstart:1.0
+      ```
+   6. Open Docker Hub and navigate to your repository. Navigate to the Tags section and see your newly pushed image
+
+- What is Docker Compose?
+
+   If you've been following the guides so far, you've been working with single container applications. But, now you're wanting to do something more complicated - run databases, message queues, caches, or a variety of other services. Do you install everything in a single container? Run multiple containers? If you run multiple, how do you connect them all together?
+
+   One best practice for containers is that each container should do one thing and do it well. While there are exceptions to this rule, avoid the tendency to have one container do multiple things.
+
+   You can use multiple ```docker run``` commands to start multiple containers. But, you'll soon realize you'll need to manage networks, all of the flags needed to connect containers to those networks, and more. And when you're done, cleanup is a little more complicated.
+
+   With Docker Compose, you can define all of your containers and their configurations in a single YAML file. If you include this file in your code repository, anyone that clones your repository can get up and running with a single command.
+
+   It's important to understand that Compose is a declarative tool - you simply define it and go. You don't always need to recreate everything from scratch. If you make a change, run ```docker compose up``` again and Compose will reconcile the changes in your file and apply them intelligently.
+
+   ```
+   Dockerfile versus Compose file
+
+   A Dockerfile provides instructions to build a container image while a Compose file defines your running containers. Quite often, a Compose file references a Dockerfile to build an image to use for a particular service.
+   ```
+   Try it out
+
+   1. Open a terminal and clone this sample application.
+      ```
+      git clone https://github.com/dockersamples/todo-list-app 
+      ```
+   2. Navigate into the todo-list-app directory:
+      ```
+      cd todo-list-app
+      ```
+      Inside this directory, you'll find a file named compose.yaml. This YAML file is where all the magic happens! It defines all the services that make up your application, along with their configurations. Each service specifies its image, ports, volumes, networks, and any other settings necessary for its functionality. Take some time to explore the YAML file and familiarize yourself with its structure.
+   
+   3. Use the ```docker compose up``` command to start the application:
+      ```
+      docker compose up -d --build
+      ```
+      When you run this command, you should see an output like this:
+      ```
+      [+] Running 5/5
+         ✔ app 3 layers [⣿⣿⣿]      0B/0B            Pulled          7.1s
+         ✔ e6f4e57cc59e Download complete                          0.9s
+         ✔ df998480d81d Download complete                          1.0s
+         ✔ 31e174fedd23 Download complete                          2.5s
+         ✔ 43c47a581c29 Download complete                          2.0s
+      [+] Running 4/4
+         ⠸ Network todo-list-app_default           Created         0.3s
+         ⠸ Volume "todo-list-app_todo-mysql-data"  Created         0.3s
+         ✔ Container todo-list-app-app-1           Started         0.3s
+         ✔ Container todo-list-app-mysql-1         Started         0.3s
+      ```
+
+Tear it down
+
+   In the CLI, use the docker compose down command to remove everything:
+      ```
+      docker compose down
+      ```
+      You'll see output similar to the following:
+      ```
+      [+] Running 3/3
+         ✔ Container todo-list-app-mysql-1  Removed        2.9s
+         ✔ Container todo-list-app-app-1    Removed        0.1s
+         ✔ Network todo-list-app_default    Removed        0.1s
+
+   Volume persistence
+
+   By default, volumes aren't automatically removed when you tear down a Compose stack. The idea is that you might want the data back if you start the stack again.
+
+   If you do want to remove the volumes, add the --volumes flag when running the docker compose down command:
+
+   ```
+   docker compose down --volumes
+   
+   [+] Running 1/0
+   ✔ Volume todo-list-app_todo-mysql-data  Removed
+   ```
+   
+</dev>
+</details>
+
+<details> <summary>
+Building images
+</summary>
+
+<dev> 
+
+- Understanding image layers
+- Writing a Dockerfile
+- Build, tag and publish an image
+- Using the build cache
+- Multi-stage builds
+
+</dev>
+</details>
+
+<details> <summary>
+Running containers
+</summary>
+
+<dev> 
+
+- Publishing ports
+- Overriding container defaults
+- Persisting container data
+- Sharing local files with containers
+- Multi-container applications
+
+</dev>
+</details>
