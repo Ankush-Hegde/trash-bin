@@ -566,7 +566,7 @@ Tear it down
    [+] Running 1/0
    ✔ Volume todo-list-app_todo-mysql-data  Removed
    ```
-   
+
 </dev>
 </details>
 
@@ -577,10 +577,37 @@ Building images
 <dev> 
 
 - Understanding image layers
+
+   As you learned in What is an image?, container images are composed of layers. And each of these layers, once created, are immutable. But, what does that actually mean? And how are those layers used to create the filesystem a container can use?
+
+   Image layers<br>
+   Each layer in an image contains a set of filesystem changes - additions, deletions, or modifications. Let’s look at a theoretical image:
+
+   - The first layer adds basic commands and a package manager, such as apt.
+   - The second layer installs a Python runtime and pip for dependency management.
+   - The third layer copies in an application’s specific requirements.txt file.
+   - The fourth layer installs that application’s specific dependencies.
+   - The fifth layer copies in the actual source code of the application.
+
+   This example might look like:
+   
+   ![alt text](docker-image-layer.png)
+
+   This is beneficial because it allows layers to be reused between images. For example, imagine you wanted to create another Python application. Due to layering, you can leverage the same Python base. This will make builds faster and reduce the amount of storage and bandwidth required to distribute the images. The image layering might look similar to the following:
+   
+   ![alt text](multi-app-docker-img.png)
+
+   Layers let you extend images of others by reusing their base layers, allowing you to add only the data that your application needs.
+
+
 - Writing a Dockerfile
+
 - Build, tag and publish an image
+
 - Using the build cache
+
 - Multi-stage builds
+
 
 </dev>
 </details>
@@ -592,10 +619,15 @@ Running containers
 <dev> 
 
 - Publishing ports
+
 - Overriding container defaults
+
 - Persisting container data
+
 - Sharing local files with containers
+
 - Multi-container applications
+
 
 </dev>
 </details>
