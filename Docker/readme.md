@@ -747,6 +747,66 @@ Building images
 
 - Writing a Dockerfile
 
+   <b>Explanation</b>
+
+   A Dockerfile is a text-based document that's used to create a container image. It provides instructions to the image builder on the commands to run, files to copy, startup command, and more.
+
+   As an example, the following Dockerfile would produce a ready-to-run Python application:
+
+   ```
+   FROM python:3.13
+   WORKDIR /usr/local/app
+
+   # Install the application dependencies
+   COPY requirements.txt ./
+   RUN pip install --no-cache-dir -r requirements.txt
+
+   # Copy in the source code
+   COPY src ./src
+   EXPOSE 8080
+
+   # Setup an app user so the container doesn't run as the root user
+   RUN useradd app
+   USER app
+
+   CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+   ```
+
+   Common instructions
+   Some of the most common instructions in a Dockerfile include:
+
+   - ```FROM <image>``` - this specifies the base image that the build will extend.
+   - ```WORKDIR <path>``` - this instruction specifies the "working directory" or the path in the image where files will be copied and commands will be executed.
+   - ```COPY <host-path> <image-path>``` - this instruction tells the builder to copy files from the host and put them into the container image.
+   - ```RUN <command>``` - this instruction tells the builder to run the specified command.
+   - ```ENV <name> <value>``` - this instruction sets an environment variable that a running container will use.
+   - ```EXPOSE <port-number>``` - this instruction sets configuration on the image that indicates a port the image would like to expose.
+   - ```USER <user-or-uid>``` - this instruction sets the default user for all subsequent instructions.
+   - ```CMD ["<command>", "<arg1>"]``` - this instruction sets the default command a container using this image will run.
+
+   <b>The Dockerfile supports the following instructions:</b>
+
+   |  Instruction |  Description |
+   |--------------|--------------|
+   |  ADD   |  	Add local or remote files and directories.   |
+   |  ARG   |  	Use build-time variables.  |
+   |  CMD   |  	Specify default commands.  |
+   |  COPY  |  	Copy files and directories.   |
+   |  ENTRYPOINT  |  	Specify default executable.   |
+   |  ENV   |  	Set environment variables. |
+   |  EXPOSE   |  	Describe which ports your application is listening on.   |
+   |  FROM  |  	Create a new build stage from a base image.  |
+   |  HEALTHCHECK |  	Check a container's health on startup. |
+   |  LABEL |  	Add metadata to an image.  |
+   |  MAINTAINER  |  	Specify the author of an image.  |
+   |  ONBUILD  |  	Specify instructions for when the image is used in a build. |
+   |  RUN   |  	Execute build commands. |
+   |  SHELL |  	Set the default shell of an image.  |
+   |  STOPSIGNAL  |  	Specify the system call signal for exiting a container.  |
+   |  USER  |  	Set user and group ID.  |
+   |  VOLUME   |  	Create volume mounts.   |
+   |  WORKDIR  |  	Change working directory.  |
+
 - Build, tag and publish an image
 
 - Using the build cache
