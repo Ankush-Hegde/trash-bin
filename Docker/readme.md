@@ -786,26 +786,104 @@ Building images
 
    <b>The Dockerfile supports the following instructions:</b>
 
-   |  Instruction |  Description |
-   |--------------|--------------|
-   |  ADD   |  	Add local or remote files and directories.   |
-   |  ARG   |  	Use build-time variables.  |
-   |  CMD   |  	Specify default commands.  |
-   |  COPY  |  	Copy files and directories.   |
-   |  ENTRYPOINT  |  	Specify default executable.   |
-   |  ENV   |  	Set environment variables. |
-   |  EXPOSE   |  	Describe which ports your application is listening on.   |
-   |  FROM  |  	Create a new build stage from a base image.  |
-   |  HEALTHCHECK |  	Check a container's health on startup. |
-   |  LABEL |  	Add metadata to an image.  |
-   |  MAINTAINER  |  	Specify the author of an image.  |
-   |  ONBUILD  |  	Specify instructions for when the image is used in a build. |
-   |  RUN   |  	Execute build commands. |
-   |  SHELL |  	Set the default shell of an image.  |
-   |  STOPSIGNAL  |  	Specify the system call signal for exiting a container.  |
-   |  USER  |  	Set user and group ID.  |
-   |  VOLUME   |  	Create volume mounts.   |
-   |  WORKDIR  |  	Change working directory.  |
+   |  Instruction |  Description |  Example |
+   |--------------|--------------|----------|
+   |  ADD   |  	Add local or remote files and directories.   | ```ADD [OPTIONS] <src> ... <dest>``` ```ADD [OPTIONS] ["<src>", ... "<dest>"]``` |
+   |  ARG   |  	Use build-time variables.  | ```ARG <name>[=<default value>] [<name>[=<default value>]...]``` |
+   |  CMD   |  	Specify default commands.  | ```CMD ["param1","param2"]``` ```CMD command param1 param2``` |
+   |  COPY  |  	Copy files and directories.   |  ```COPY [OPTIONS] <src> ... <dest>``` ```COPY [OPTIONS] ["<src>", ... "<dest>"]``` |
+   |  ENTRYPOINT  |  	Specify default executable.   | ```ENTRYPOINT ["executable", "param1", "param2"]``` |
+   |  ENV   |  	Set environment variables. | ```ENV <key>=<value> [<key>=<value>...]```|
+   |  EXPOSE   |  	Describe which ports your application is listening on.   | ```EXPOSE <port> [<port>/<protocol>...]``` |
+   |  FROM  |  	Create a new build stage from a base image.  |  ```FROM [--platform=<platform>] <image> [AS <name>]``` ```FROM [--platform=<platform>] <image>[:<tag>] [AS <name>]``` ```FROM [--platform=<platform>] <image>[@<digest>] [AS <name>]``` |
+   |  HEALTHCHECK |  	Check a container's health on startup. | ```HEALTHCHECK [OPTIONS] CMD command``` |
+   |  LABEL |  	Add metadata to an image.  | ```LABEL <key>=<value> [<key>=<value>...]``` |
+   |  MAINTAINER  |  	Specify the author of an image.  | ```MAINTAINER <name>``` ```ONBUILD ADD . /app/src``` |
+   |  ONBUILD  |  	Specify instructions for when the image is used in a build. | ```ONBUILD INSTRUCTION```
+   |  RUN   |  	Execute build commands. |  ```RUN [OPTIONS] <command> ...``` ```RUN [OPTIONS] [ "<command>", ... ]``` |
+   |  SHELL |  	Set the default shell of an image.  | ```SHELL ["executable", "parameters"]``` |
+   |  STOPSIGNAL  |  	Specify the system call signal for exiting a container.  | ```STOPSIGNAL signal``` |
+   |  USER  |  	Set user and group ID.  | ```USER <user>[:<group>]``` |
+   |  VOLUME   |  	Create volume mounts.   | ```VOLUME ["/data"]``` |
+   |  WORKDIR  |  	Change working directory.  | ```WORKDIR /path/to/workdir``` |
+
+   <b>Environment replacement</b><br>
+   Example (parsed representation is displayed after the #):
+
+   ```
+   FROM busybox
+   ENV FOO=/bar
+   WORKDIR ${FOO}   # WORKDIR /bar
+   ADD . $FOO       # ADD . /bar
+   COPY \$FOO /quux # COPY $FOO /quux
+   ```
+   Environment variables are supported by the following list of instructions in the Dockerfile:
+   ```ADD``` ```COPY``` ```ENV``` ```EXPOSE``` ```FROM``` ```LABEL``` ```STOPSIGNAL``` ```USER``` ```VOLUME``` ```WORKDIR``` ```ONBUILD (for onbuild, when combined with one of the supported instructions mentioned priviously)```
+
+   Environment variable substitution use the same value for each variable throughout the entire instruction. Changing the value of a variable only takes effect in subsequent instructions. Consider the following example:
+   ```
+   ENV abc=hello
+   ENV abc=bye def=$abc
+   ENV ghi=$abc
+   ```
+   The value of def becomes hello<br>
+   The value of ghi becomes bye
+
+   <b>.dockerignore file,</b> <br>
+   You can use .dockerignore file to exclude files and directories from the build context. For more information
+
+   <b>Use a different shell</b><br>
+   You can change the default shell using the SHELL command. For example:
+
+   ```
+   SHELL ["/bin/bash", "-c"]
+   RUN echo hello
+   ```
+
+   <b>Building best practices</b><br>
+
+   - <b>Using multiple stages</b> can also let you build more efficiently by executing build steps in parallel.
+   - If you have multiple images with a lot in common, consider <b>creating a reusable stage</b> that includes the shared components, and basing your unique stages on that. Docker only needs to build the common stage once. This means that your derivative images use memory on the Docker host more efficiently and load more quickly.
+   - The first step towards achieving a secure image is to <b>choose the right base image</b>. When choosing an image, ensure it's built from a trusted source and keep it small
+   - Docker images are immutable. Building an image is taking a snapshot of that image at that moment. That includes any base images, libraries, or other software you use in your build. To keep your images up-to-date and secure, <b>rebuild your images</b> regularly with updated dependencies
+   - To <b>exclude files not relevant</b> to the build, without restructuring your source repository, use a .dockerignore file. This file supports exclusion patterns similar to .gitignore files
+   - The image defined by your Dockerfile should <b>generate containers that are as ephemeral</b> as possible. Ephemeral means that the container can be stopped and destroyed, then rebuilt and replaced with an absolute minimum set up and configuration.
+   - <b>Avoid installing extra or unnecessary packages</b> just because they might be nice to have. For example, you don’t need to include a text editor in a database image.
+
+   <b>docker init</b><br>
+   Initialize a project with the files necessary to run the project in a container.
+
+   Docker Desktop provides the ```docker init``` CLI command. Run docker init in your project directory to be walked through the creation of the following files with sensible defaults for your project:
+
+   - .dockerignore
+   - Dockerfile
+   - ompose.yaml
+   - README.Docker.md
+
+   Example of selecting Go<br>
+   The following example shows the prompts that appear after   selecting Go and example input.
+
+   ```
+   ? What application platform does your project use? Go
+   ? What version of Go do you want to use? 1.20
+   ? What's the relative directory (with a leading .) of your main package? .
+   ? What port does your server listen on? 3333
+
+   CREATED: .dockerignore
+   CREATED: Dockerfile
+   CREATED: compose.yaml
+   CREATED: README.Docker.md
+
+   ✔ Your Docker files are ready!
+
+   Take a moment to review them and tailor them to your application.
+
+   When you're ready, start your application by running: docker   compose up --build
+
+   Your application will be available at http://localhost:3333
+
+   Consult README.Docker.md for more information about using the  generated files.
+   ```
 
 - Build, tag and publish an image
 
