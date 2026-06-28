@@ -345,32 +345,151 @@ Deployment
       ↓
     Pods
 ```
+Example deployment.yaml
+
+```use kubectl apply -f deployment.yaml ``` to apply
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 80
+```
 Commands:
 - Run kubectl get deployments to check if the Deployment was created
 ```
 >kubectl get deployments
+
 NAME               READY   UP-TO-DATE   AVAILABLE   AGE
 nginx-deployment   0/3     0            0           1s
 ```
 - check roolout(deployment) status or To see the Deployment rollout status, run:
 ```
 >kubectl rollout status deployment/nginx-deployment
+
 Waiting for rollout to finish: 2 out of 3 new replicas have been updated...
 deployment "nginx-deployment" successfully rolled out
 ```
 - To see the ReplicaSet (rs) created by the Deployment, run:
 ```
 > kubectl get rs
+
 NAME                          DESIRED   CURRENT   READY   AGE
 nginx-deployment-75675f5897   3         3         3       18s
 ```
 - To see the labels automatically generated for each Pod, run:
 ```
 >kubectl get pods --show-labels
+
 NAME                                READY     STATUS    RESTARTS   AGE       LABELS
 nginx-deployment-75675f5897-7ci7o   1/1       Running   0          18s       app=nginx,pod-template-hash=75675f5897
 nginx-deployment-75675f5897-kzszj   1/1       Running   0          18s       app=nginx,pod-template-hash=75675f5897
 nginx-deployment-75675f5897-qqcnn   1/1       Running   0          18s       app=nginx,pod-template-hash=75675f5897
+```
+- check the status of your deployment if it is ready or not
+```
+>kubectl get all
+
+NAME                         READY   STATUS    RESTARTS      AGE
+pod/nginx                    1/1     Running   1 (50m ago)   13d
+pod/nginx-78c44574cd-2sbtz   1/1     Running   0             4m11s
+pod/nginx-78c44574cd-f4j44   1/1     Running   0             2m30s
+pod/nginx-78c44574cd-xghfd   1/1     Running   0             2m30s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   13d
+
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx   3/3     3            3           4m11s
+
+NAME                               DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-78c44574cd   3         3         3       4m11s
+```
+
+- Get details of your Deployment:
+```
+>kubectl describe deployments
+
+Name:                   nginx-deployment
+Namespace:              default
+CreationTimestamp:      Thu, 30 Nov 2017 10:56:25 +0000
+Labels:                 app=nginx
+Annotations:            deployment.kubernetes.io/revision=2
+Selector:               app=nginx
+Replicas:               3 desired | 3 updated | 3 total | 3 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=nginx
+   Containers:
+    nginx:
+      Image:        nginx:1.16.1
+      Port:         80/TCP
+      Environment:  <none>
+      Mounts:       <none>
+    Volumes:        <none>
+  Conditions:
+    Type           Status  Reason
+    ----           ------  ------
+    Available      True    MinimumReplicasAvailable
+    Progressing    True    NewReplicaSetAvailable
+  OldReplicaSets:  <none>
+  NewReplicaSet:   nginx-deployment-1564180365 (3/3 replicas created)
+  Events:
+    Type    Reason             Age   From                   Message
+    ----    ------             ----  ----                   -------
+    Normal  ScalingReplicaSet  2m    deployment-controller  Scaled up replica set nginx-deployment-2035384211 to 3
+    Normal  ScalingReplicaSet  24s   deployment-controller  Scaled up replica set nginx-deployment-1564180365 to 1
+    Normal  ScalingReplicaSet  22s   deployment-controller  Scaled down replica set nginx-deployment-2035384211 to 2
+    Normal  ScalingReplicaSet  22s   deployment-controller  Scaled up replica set nginx-deployment-1564180365 to 2
+    Normal  ScalingReplicaSet  19s   deployment-controller  Scaled down replica set nginx-deployment-2035384211 to 1
+    Normal  ScalingReplicaSet  19s   deployment-controller  Scaled up replica set nginx-deployment-1564180365 to 3
+    Normal  ScalingReplicaSet  14s   deployment-controller  Scaled down replica set nginx-deployment-2035384211 to 0
+```
+- Checking Rollout History of a Deployment:
+```kubectl rollout history <name of the deployment>```
+```
+>kubectl rollout history deployment/nginx-deployment
+
+deployments "nginx-deployment"
+REVISION    CHANGE-CAUSE
+1           <none>
+2           <none>
+3           <none> 
+```
+- Rolling Back to a Previous Revision
+```
+>kubectl rollout undo deployment/nginx-deployment
+
+deployment.apps/nginx-deployment rolled back
+```
+- you can rollback to a specific revision by specifying it with --to-revision
+```
+>kubectl rollout undo deployment/nginx-deployment --to-revision=2
+
+deployment.apps/nginx-deployment rolled back
+```
+- edit deployment
+```
+kubectl edit deployment deployment-name
 ```
 
 </dev>
