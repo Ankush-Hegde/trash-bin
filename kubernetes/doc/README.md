@@ -242,8 +242,12 @@ Cluster
  ├── Node2
  └── Node3
  ```
-
- <b>Node</b>:- A virtual or physical machine on which one or more kubernetes pods run. nodes can be:
+<details>
+<summary>
+ <b>Node</b>
+</summary>
+<dev>
+A virtual or physical machine on which one or more kubernetes pods run. nodes can be:
 
   - VM
   - EC2
@@ -275,8 +279,17 @@ After you create a Node object, or the kubelet on a node self-registers, the con
 }
 ```
 Kubernetes creates a Node object internally (the representation). Kubernetes checks that a kubelet has registered to the API server that matches the metadata.name field of the Node. If the node is healthy (i.e. all necessary services are running), then it is eligible to run a Pod. Otherwise, that node is ignored for any cluster activity until it becomes healthy.
+</dev>
+</details>
 
-<b>Pod</b>:- Pods are the smallest deployable units of computing that you can create and manage in Kubernetes. pods have:
+
+<details>
+<summary>
+<b>Pod</b>
+</summary>
+<dev>
+Pods are the smallest deployable units of computing that you can create and manage in Kubernetes. pods have:
+
 - IP
 - Storage
 - Network
@@ -305,8 +318,16 @@ check
 ```
 kubectl get pods
 ```
+</dev>
+</details>
 
-<b>ReplicaSet</b>:- A ReplicaSet's purpose is to maintain a stable set of replica Pods running at any given time. As such, it is often used to guarantee the availability of a specified number of identical Pods. Usually, you define a Deployment and let that Deployment manage ReplicaSets automatically.
+<details>
+<summary>
+<b>ReplicaSet</b>
+</summary>
+<dev>
+
+A ReplicaSet's purpose is to maintain a stable set of replica Pods running at any given time. As such, it is often used to guarantee the availability of a specified number of identical Pods. Usually, you define a Deployment and let that Deployment manage ReplicaSets automatically.
 
 Example: (NOTE: we recommend using Deployments instead of directly using ReplicaSets, unless you require custom update orchestration or don't require updates at all)
 ```
@@ -333,8 +354,16 @@ spec:
         image: us-docker.pkg.dev/google-samples/containers/gke/gb-frontend:v5
 
 ```
+</dev>
+</details>
 
-<b>Deployments</b>:- A Deployment manages a set of Pods to run an application workload, usually one that doesn't maintain state.
+
+<details>
+<summary>
+<b>Deployments</b>
+</summary>
+<dev>
+A Deployment manages a set of Pods to run an application workload, usually one that doesn't maintain state.
 
 A Deployment is a resource object for managing Pods and ReplicaSets via a declarative configuration, which define a desired state that describes the application workload life cycle, number of pods, deployment strategies, container images, and more. The Deployment Controller works to ensure the actual state matches desired state, such as by replacing a failed pod. Out of the box, Deployments support several deployment strategies, like "recreate" and "rolling update", however can be customized to support more advanced deployment strategies such as blue/green or canary deployments.
 
@@ -491,6 +520,452 @@ deployment.apps/nginx-deployment rolled back
 ```
 kubectl edit deployment deployment-name
 ```
+<b>StatefulSet</b>:- It is a kind of resource in kubernetes that manages the deployments and scaling of stateful applications maintaining the stability by providing the stable network identifiers and persistent storage. It is mostly used for the databases applications
+
+StatefulSets are Kubernetes components that are used specifically for deploying stateful applications. In Kubernetes on the basis on methods of deploying. There are two types of applications - Stateful applications and stateless applications. Therefore, There are two ways for deploying an application on Kubernetes - through Deployment (for deploying stateless applications) and through StatefulSets (for deploying stateful applications).
+
+Applications that maintain any form of persistent state or data are called stateful applications. Most of the database applications that we build like MySQL and MongoDB are stateful applications. The basic point of difference between a stateful and a stateless application is the need of persistent storage. Stateful applications requires a persistent storage while stateless applications do not have a need to store data, therefore they don't require any persistent storage
+
+EXAMPLE:
+```
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: gfg-statefulset
+  annotations:
+    description: "This is a sample GFG statefulset"
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  serviceName: "nginx"
+  replicas: 4
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+          name: web
+        volumeMounts:
+        - name: www
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: www
+        persistentVolumeClaim:
+          claimName: myclaim
+```
+### Deploying A Stateful Application Using Kubernetes StatefulSets
+In this section, we will learn how to deploy a stateful Redis cluster using Kubernetes. Following the tutorial step by step in order to deploy the stateful set:
+
+<b>Step 1.</b> Creating a kubernetes namespace where we will keep all our resources to deploy. For creating a namespace, enter the following command in your terminal:
+```
+kubectl create ns gfg-namespace
+```
+This will create you a namespace called "gfg-namespace" You will get a similar output:
+
+Kubectl create namespace 
+
+<b>Step 2.</b> Create a statefulset.yaml file and enter the following code inside the file. You can create the file by using the command:
+```
+touch statefulset.yaml
+```
+Now enter the following code inside the statefulset.yaml:
+```
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-cluster
+data:
+  update-node.sh: |
+    #!/bin/sh
+    REDIS_NODES="/data/nodes.conf"
+    sed -i -e "/myself/ s/[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/${POD_IP}/" ${REDIS_NODES}
+    exec "$@"
+  redis.conf: |+
+    cluster-enabled yes
+    cluster-require-full-coverage no
+    cluster-node-timeout 15000
+    cluster-config-file /data/nodes.conf
+    cluster-migration-barrier 1
+    appendonly yes
+    protected-mode no
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-cluster
+spec:
+  serviceName: redis-cluster
+  replicas: 6
+  selector:
+    matchLabels:
+      app: redis-cluster
+  template:
+    metadata:
+      labels:
+        app: redis-cluster
+    spec:
+      containers:
+      - name: redis
+        image: redis:5.0.1-alpine
+        ports:
+        - containerPort: 6379
+          name: client
+        - containerPort: 16379
+          name: gossip
+        command: ["/conf/update-node.sh", "redis-server", "/conf/redis.conf"]
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        volumeMounts:
+        - name: conf
+          mountPath: /conf
+          readOnly: false
+        - name: data
+          mountPath: /data
+          readOnly: false
+      volumes:
+      - name: conf
+        configMap:
+          name: redis-cluster
+          defaultMode: 0755
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "hostpath"
+      resources:
+        requests:
+          storage: 50Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cluster
+spec:
+  clusterIP: None
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: client
+  - port: 16379
+    targetPort: 16379
+    name: gossip
+  selector:
+    app: redis-cluster
+```
+<b>Step 3.</b> Now similar to previous step, create a service file named app.yaml and enter the following code into it:
+```
+touch app.yaml
+```
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: hit-counter-lb
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 5000
+  selector:
+      app: myapp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hit-counter-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp
+        image: aimvector/api-redis-ha:1.0
+        ports:
+        - containerPort: 5000
+```
+<b>Step 4.</b> Enter the following command to apply the app.yaml file in our namespace:
+```
+ kubectl -n gfg-namespace apply -f app.yaml
+```
+<b>Step 5.</b> Now we can apply the statefulset.yaml in our namespace. Enter the following command to apply the statefulset:
+```
+kubectl -n gfg-namespace apply -f statefulset.yaml
+```
+It will create configmap, service and statefulset for the redis-cluster. it will give you a similar output:
+
+![alt text](image.png)
+
+<b>Step 6.</b> We have successfully created our pods. in our Redis cluster we have 6 pods running. In order to check if the pods are running or not, we can get the list of all pods inside our namespace by the following command
+```
+ kubectl -n gfg-namespace get pods
+```
+This will show you 6 pods running, all the pods are indexed properly like we discussed earlier. If all the pods are not yet running, you shall wait and enter the command again since it takes some time for pods to get running. You will get a similar output:
+
+![alt text](image-1.png)
+
+<b>Step 7.</b> Now we should check if there are equal number of Persistant Volumes are running, for that enter the following code in the terminal:
+```
+kubectl -n gfg-namespace get pv
+```
+You will get 6 PVs running, each one for a pod. You will get a similar output:
+![alt text](image-2.png)
+
+This is what Kubernetes does, it creates a pod, then it creates the volume and assigns the volume to the pod and move to the next Kubernetes pod, it repeats the same thing for all the pods.
+
+<b>Step 8.</b> Now let's scale up our pods form 6 to 10, for that we can enter the following command:
+```
+ kubectl -n gfg-namespace scale statefulset redis-cluster --replicas=10
+```
+<b>Step 9.</b> Let's again check our pods by the command
+```
+ kubectl -n gfg-namespace get pods
+```
+And this time we have 10 pods running indexed from 0 to 9. You will also get a similar output:
+
+![alt text](image-3.png)
+
+<b>Step 10.</b> Similarly we can scale down our pods to 3 by enter the following command:
+```
+kubectl -n gfg-namespace scale statefulset redis-cluster --replicas=3
+```
+and now you will get this output:
+
+![alt text](image-4.png) 
+
+We now have only 3 pods. This is how we use StatefulSets in order to deploy Stateful applications. Let's now discuss some differences between deployment and StatefulSet
+
+<b>Differences Between Deployment and StatefulSet</b>
+| StatefulSet | Deployment |
+|-------------|------------|
+| StatefulSets are Kubernetes component that is used specifically for stateful applications. | Deployment is used to deploy stateless applications.|
+| In StatefulSets, the pods get created as well as deleted in a specific order | In Deployment, all pods are created parallelly.|
+| When we scale down StatefulSets, the last pod gets deleted | When we scale down a deployment a random pod is picked up and deleted|
+| A sticky and predictable name is assigned to the pods | A random name is assigned to the pods.|
+| Each pod uses its own persistent volume (like we saw in the tutorial.) | All the pods use the same persistent volume|
+</dev>
+</details>
+
+<details>
+<summary>
+<b>Service</b>
+</summary>
+<dev>
+
+Expose an application running in your cluster behind a single outward-facing endpoint, even when the workload is split across multiple backends.
+
+if Pods die.IP changes.Service gives stable endpoint.it help you expose groups of Pods over a network. 
+
+In Kubernetes, a Service is a method for exposing a network application that is running as one or more Pods in your cluster.
+
+Defining a Service:-
+
+A Service is an object (the same way that a Pod or a ConfigMap is an object). You can create, view or modify Service definitions using the Kubernetes API. Usually you use a tool such as kubectl to make those API calls for you.
+
+For example, suppose you have a set of Pods that each listen on TCP port 9376 and are labelled as app.kubernetes.io/name=MyApp. You can define a Service to publish that TCP listener:
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  selector:
+    app.kubernetes.io/name: MyApp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9376
+
+```
+
+Applying this manifest creates a new Service named "my-service" with the default ClusterIP service type. The Service targets TCP port 9376 on any Pod with the app.kubernetes.io/name: MyApp label.
+
+Kubernetes assigns this Service an IP address (the cluster IP), that is used by the virtual IP address mechanism.
+
+The controller for that Service continuously scans for Pods that match its selector, and then makes any necessary updates to the set of EndpointSlices for the Service.
+
+port defination:
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  selector:
+    app.kubernetes.io/name: proxy
+  ports:
+  - name: name-of-service-port
+    protocol: TCP
+    port: 80
+    targetPort: http-web-svc
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    app.kubernetes.io/name: proxy
+spec:
+  containers:
+  - name: nginx
+    image: nginx:stable
+    ports:
+      - containerPort: 80
+        name: http-web-svc
+```
+
+Application protocol:
+
+| Protocol |	Description |
+|----------|--------------|
+| kubernetes.io/h2c	| HTTP/2 over cleartext as described in RFC 9113| 
+| kubernetes.io/ws	| WebSocket over cleartext as described in RFC 6455| 
+| kubernetes.io/wss	| WebSocket over TLS as described in RFC 6455| 
+
+Multi-port Services:-
+
+For some Services, you need to expose more than one port. Kubernetes lets you configure multiple port definitions on a Service object. When using multiple ports for a Service, you must give all of your ports names so that these are unambiguous. For example:
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  selector:
+    app.kubernetes.io/name: MyApp
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 9376
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 9377
+```
+Service type :-
+
+For some parts of your application (for example, frontends) you may want to expose a Service onto an external IP address, one that's accessible from outside of your cluster.
+
+Kubernetes Service types allow you to specify what kind of Service you want.
+
+The available type values and their behaviors are:
+
+<b>ClusterIP :-</b> 
+Exposes the Service on a cluster-internal IP. Choosing this value makes the Service only reachable from within the cluster. This is the default that is used if you don't explicitly specify a type for a Service. You can expose the Service to the public internet using an Ingress or a Gateway.
+
+This default Service type assigns an IP address from a pool of IP addresses that your cluster has reserved for that purpose.
+
+Several of the other types for Service build on the ClusterIP type as a foundation.
+
+If you define a Service that has the .spec.clusterIP set to "None" then Kubernetes does not assign an IP address. See headless Services for more information.
+
+Choosing your own IP address
+You can specify your own cluster IP address as part of a Service creation request. To do this, set the .spec.clusterIP field. For example, if you already have an existing DNS entry that you wish to reuse, or legacy systems that are configured for a specific IP address and difficult to re-configure.
+
+The IP address that you choose must be a valid IPv4 or IPv6 address from within the service-cluster-ip-range CIDR range that is configured for the API server. If you try to create a Service with an invalid clusterIP address value, the API server will return a 422 HTTP status code to indicate that there's a problem.
+
+<b>NodePort:- </b>Exposes the Service on each Node's IP at a static port (the NodePort). To make the node port available, Kubernetes sets up a cluster IP address, the same as if you had requested a Service of type: ClusterIP.
+
+Using a NodePort gives you the freedom to set up your own load balancing solution, to configure environments that are not fully supported by Kubernetes, or even to expose one or more nodes' IP addresses directly.
+
+For a node port Service, Kubernetes additionally allocates a port (TCP, UDP or SCTP to match the protocol of the Service). Every node in the cluster configures itself to listen on that assigned port and to forward traffic to one of the ready endpoints associated with that Service. You'll be able to contact the type: NodePort Service, from outside the cluster, by connecting to any node using the appropriate protocol (for example: TCP), and the appropriate port (as assigned to that Service).
+
+Here is an example manifest for a Service of type: NodePort that specifies a NodePort value (30007, in this example):
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: MyApp
+  ports:
+    - port: 80
+      # By default and for convenience, the `targetPort` is set to
+      # the same value as the `port` field.
+      targetPort: 80
+      # Optional field
+      # By default and for convenience, the Kubernetes control plane
+      # will allocate a port from a range (default: 30000-32767)
+      nodePort: 30007
+```
+
+<b>LoadBalancer:- </b>Exposes the Service externally using an external load balancer. Kubernetes does not directly offer a load balancing component; you must provide one, or you can integrate your Kubernetes cluster with a cloud provider.
+
+On cloud providers which support external load balancers, setting the type field to LoadBalancer provisions a load balancer for your Service. The actual creation of the load balancer happens asynchronously, and information about the provisioned balancer is published in the Service's .status.loadBalancer field. For example:
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  selector:
+    app.kubernetes.io/name: MyApp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9376
+  clusterIP: 10.0.171.239
+  type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+    - ip: 192.0.2.127
+```
+
+<b>ExternalName:- </b>Maps the Service to the contents of the externalName field (for example, to the hostname api.foo.bar.example). The mapping configures your cluster's DNS server to return a CNAME record with that external hostname value. No proxying of any kind is set up.
+
+Services of type ExternalName map a Service to a DNS name, not to a typical selector such as my-service or cassandra. You specify these Services with the spec.externalName parameter.
+
+This Service definition, for example, maps the my-service Service in the prod namespace to my.database.example.com:
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  namespace: prod
+spec:
+  type: ExternalName
+  externalName: my.database.example.com
+```
+</dev>
+</details>
+
+<details>
+<summary>
+<b>Namespace</b>
+</summary>
+<dev>
+details
+</dev>
+</details>
+
+
 
 </dev>
 </details>
