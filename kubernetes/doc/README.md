@@ -217,13 +217,167 @@ https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#-strong-
 </details>
 
 
-
-------------------------------------------------------------
 </dev>
 </details>
 
 
 <!-- OVERVEW END -->
+
+
+<!-- Cluster Architecture END -->
+<details>
+<summary>
+<b>Cluster Architecture</b>
+</summary>
+<dev>
+
+![alt text](kubernetes-cluster-architecture.svg)
+![alt text](Kubernetes-Architecture.png)
+
+<b>Cluster</b>:- A set of nodes managed by Kubernetes control plane.
+```
+Cluster
+ ├── Control Plane
+ ├── Node1
+ ├── Node2
+ └── Node3
+ ```
+
+ <b>Node</b>:- A virtual or physical machine on which one or more kubernetes pods run. nodes can be:
+
+  - VM
+  - EC2
+  - Physical Server
+
+```
+Node
+ ├── kubelet
+ ├── container runtime
+ ├── pods
+ └── kube-proxy
+```
+There are two main ways to have Nodes added to the API server:
+
+- The kubelet on a node self-registers to the control plane
+- You (or another human user) manually add a Node object
+
+After you create a Node object, or the kubelet on a node self-registers, the control plane checks whether the new Node object is valid. For example, if you try to create a Node from the following JSON manifest:
+```
+{
+  "kind": "Node",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "10.240.79.157",
+    "labels": {
+      "name": "my-first-k8s-node"
+    }
+  }
+}
+```
+Kubernetes creates a Node object internally (the representation). Kubernetes checks that a kubelet has registered to the API server that matches the metadata.name field of the Node. If the node is healthy (i.e. all necessary services are running), then it is eligible to run a Pod. Otherwise, that node is ignored for any cluster activity until it becomes healthy.
+
+<b>Pod</b>:- Pods are the smallest deployable units of computing that you can create and manage in Kubernetes. pods have:
+- IP
+- Storage
+- Network
+```
+Pod
+ ├── App Container
+ └── Sidecar Container
+```
+Create a pod:<br>
+pod.yaml
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+```
+then Run: 
+```
+kubectl apply -f pod.yaml
+```
+check
+```
+kubectl get pods
+```
+
+<b>ReplicaSet</b>:- A ReplicaSet's purpose is to maintain a stable set of replica Pods running at any given time. As such, it is often used to guarantee the availability of a specified number of identical Pods. Usually, you define a Deployment and let that Deployment manage ReplicaSets automatically.
+
+Example: (NOTE: we recommend using Deployments instead of directly using ReplicaSets, unless you require custom update orchestration or don't require updates at all)
+```
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: frontend
+  labels:
+    app: guestbook
+    tier: frontend
+spec:
+  # modify replicas according to your case
+  replicas: 3
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: php-redis
+        image: us-docker.pkg.dev/google-samples/containers/gke/gb-frontend:v5
+
+```
+
+<b>Deployments</b>:- A Deployment manages a set of Pods to run an application workload, usually one that doesn't maintain state.
+
+A Deployment is a resource object for managing Pods and ReplicaSets via a declarative configuration, which define a desired state that describes the application workload life cycle, number of pods, deployment strategies, container images, and more. The Deployment Controller works to ensure the actual state matches desired state, such as by replacing a failed pod. Out of the box, Deployments support several deployment strategies, like "recreate" and "rolling update", however can be customized to support more advanced deployment strategies such as blue/green or canary deployments.
+
+```
+Deployment
+      ↓
+ ReplicaSet
+      ↓
+    Pods
+```
+Commands:
+- Run kubectl get deployments to check if the Deployment was created
+```
+>kubectl get deployments
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+nginx-deployment   0/3     0            0           1s
+```
+- check roolout(deployment) status or To see the Deployment rollout status, run:
+```
+>kubectl rollout status deployment/nginx-deployment
+Waiting for rollout to finish: 2 out of 3 new replicas have been updated...
+deployment "nginx-deployment" successfully rolled out
+```
+- To see the ReplicaSet (rs) created by the Deployment, run:
+```
+> kubectl get rs
+NAME                          DESIRED   CURRENT   READY   AGE
+nginx-deployment-75675f5897   3         3         3       18s
+```
+- To see the labels automatically generated for each Pod, run:
+```
+>kubectl get pods --show-labels
+NAME                                READY     STATUS    RESTARTS   AGE       LABELS
+nginx-deployment-75675f5897-7ci7o   1/1       Running   0          18s       app=nginx,pod-template-hash=75675f5897
+nginx-deployment-75675f5897-kzszj   1/1       Running   0          18s       app=nginx,pod-template-hash=75675f5897
+nginx-deployment-75675f5897-qqcnn   1/1       Running   0          18s       app=nginx,pod-template-hash=75675f5897
+```
+
+</dev>
+</details>
+<!-- Cluster Architecture END -->
+
+------------------------------------------------------------
 
 <!-- 
 <details>
