@@ -1051,7 +1051,7 @@ To see which Kubernetes resources are and aren't in a namespace:
   # Not in a namespace
   kubectl api-resources --namespaced=false
 ```
-we can set namespace, user, cluster in context, here namespace is set in minikube cluster
+-> we can set namespace, user, cluster in context, here namespace is set in minikube cluster, AUTHINFO is user
 ![alt text](image-6.png)
 
 </dev>
