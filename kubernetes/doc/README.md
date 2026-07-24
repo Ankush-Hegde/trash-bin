@@ -961,7 +961,59 @@ spec:
 <b>Namespace</b>
 </summary>
 <dev>
-details
+
+  ```
+  Cluster
+  ├── namespace-1
+  ├── team-2-services
+  └── team-3-services
+  ```
+
+  In Kubernetes, namespaces provide a mechanism for isolating groups of resources within a single cluster. Names of resources need to be unique within a namespace, but not across namespaces. Namespace-based scoping is applicable only for namespaced objects (e.g. Deployments, Services, etc.) and not for cluster-wide objects (e.g. StorageClass, Nodes, PersistentVolumes, etc.).<br><br>
+
+  ```
+  Note: 
+  -> Avoid creating namespaces with the prefix kube-, since it is reserved for Kubernetes system namespaces.
+  -> For a production cluster, consider not using the default namespace. Instead, make other namespaces and use those.
+  ```
+
+  #### <b>When to Use Multiple Namespaces :- </b>
+  
+  Namespaces are intended for use in environments with many users spread across multiple teams, or projects. For clusters with a few to tens of users, you should not need to create or think about namespaces at all. Start using namespaces when you need the features they provide.<br><br>
+
+  #### <b>Initial namespaces :-</b>
+  
+  Kubernetes starts with four initial namespaces:<br>
+    ```default```:- Kubernetes includes this namespace so that you can start using your new cluster without first creating a namespace.<br>
+    ```kube-node-lease```:- This namespace holds Lease objects associated with each node. Node leases allow the kubelet to send heartbeats so that the control plane can detect node failure.<br>
+    ```kube-public```:- This namespace is readable by all clients (including those not authenticated). This namespace is mostly reserved for cluster usage, in case that some resources should be visible and readable publicly throughout the whole cluster. The public aspect of this namespace is only a convention, not a requirement.<br>
+    ```kube-system```:- The namespace for objects created by the Kubernetes system.
+
+  #### <b>Working with Namespaces :-</b>
+  
+  -> <b>view namespace :- </b><br>
+    You can list the current namespaces in a cluster using:
+    ```kubectl get namespace``` or ```kubectl get ns```
+  ```
+    NAME              STATUS   AGE
+    default           Active   1d
+    kube-node-lease   Active   1d
+    kube-public       Active   1d
+    kube-system       Active   1d
+  ```
+  creating a new nginx pod in new namespace
+  ![alt text](image-5.png)
+
+  -> <b>Setting the namespace preference :-</b><br>
+  You can permanently save the namespace for all subsequent kubectl commands in that context. The use of -n or --namespace is not required when the the below command is ran
+
+  ```
+    kubectl config set-context --current --namespace=<insert-namespace-name-here>
+    # Validate it
+    kubectl config view --minify | grep namespace:
+  ```
+
+
 </dev>
 </details>
 
