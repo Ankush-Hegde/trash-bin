@@ -967,6 +967,7 @@ spec:
   ├── namespace-1
   ├── team-2-services
   └── team-3-services
+  └── customer-1-services
   ```
 
   In Kubernetes, namespaces provide a mechanism for isolating groups of resources within a single cluster. Names of resources need to be unique within a namespace, but not across namespaces. Namespace-based scoping is applicable only for namespaced objects (e.g. Deployments, Services, etc.) and not for cluster-wide objects (e.g. StorageClass, Nodes, PersistentVolumes, etc.).<br><br>
@@ -1001,8 +1002,31 @@ spec:
     kube-public       Active   1d
     kube-system       Active   1d
   ```
+  ```kubectl get namespaces --show-labels```
+  ```
+  NAME          STATUS    AGE       LABELS
+  default       Active    32m       <none>
+  development   Active    29s       name=development
+  production    Active    23s       name=production
+  ```
+
   creating a new nginx pod in new namespace
   ![alt text](image-5.png)
+
+  creating namespace with name development using yaml:
+  namespace-dev.yaml
+  ```
+  apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: development
+    labels:
+      name: development
+  ```
+  Create the development namespace using kubectl 
+  ```
+  kubectl create -f namespace-dev.yaml
+  ```
 
   -> <b>Setting the namespace preference :-</b><br>
   You can permanently save the namespace for all subsequent kubectl commands in that context. The use of -n or --namespace is not required when the the below command is ran
@@ -1013,6 +1037,22 @@ spec:
     kubectl config view --minify | grep namespace:
   ```
 
+-> <b>Namespaces and DNS:-</b><br>
+When you create a Service, it creates a corresponding DNS entry. This entry is of the form ```<service-name>.<namespace-name>.svc.cluster.local```, which means that if a container only uses ```<service-name>```, it will resolve to the service which is local to a namespace. This is useful for using the same configuration across multiple namespaces such as Development, Staging and Production. If you want to reach across namespaces, you need to use the fully qualified domain name (FQDN).
+
+-> <b>Not all objects are in a namespace:-</b><br>
+Most Kubernetes resources (e.g. Pods, Services, Deployments, and others) are in some namespaces. However namespace resources are not themselves in a namespace. And low-level resources, such as Nodes and PersistentVolumes, are not in any namespace.
+
+To see which Kubernetes resources are and aren't in a namespace:
+```
+  # In a namespace
+  kubectl api-resources --namespaced=true
+
+  # Not in a namespace
+  kubectl api-resources --namespaced=false
+```
+we can set namespace, user, cluster in context, here namespace is set in minikube cluster
+![alt text](image-6.png)
 
 </dev>
 </details>
