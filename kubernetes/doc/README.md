@@ -1403,6 +1403,211 @@ to delete config map ``` kubectl delete configmap <name> ```
 </dev>
 </details>
 
+<details>
+<summary>
+<b>Secrets</b>
+</summary>
+<dev>
+
+![alt text](image-22.png)
+
+A Secret is an object that contains a small amount of sensitive data such as a password, a token, or a key. Such information might otherwise be put in a Pod specification or in a container image. Using a Secret means that you don't need to include confidential data in your application code.
+
+Because Secrets can be created independently of the Pods that use them, there is less risk of the Secret (and its data) being exposed during the workflow of creating, viewing, and editing Pods. Kubernetes, and applications that run in your cluster, can also take additional precautions with Secrets, such as avoiding writing sensitive data to nonvolatile storage.
+
+Secrets are similar to ConfigMaps but are specifically intended to hold confidential data.
+
+```
+NOTE: Secrets are Base64 encoded by default, not true encryption. Production clusters often encrypt them in etcd and use external secret stores
+```
+
+In order to safely use Secrets, take at least the following steps:
+
+- Enable Encryption at Rest for Secrets.
+- Enable or configure RBAC rules with least-privilege access to Secrets.
+- Restrict Secret access to specific containers.
+- Consider using external Secret store providers.
+
+| Built-in Secret Type | Purpose & Description | Required Keys |
+|----------------------|------------------------|--------------|
+| Opaque (Default) | "Arbitrary user-defined key-value pairs (passwords, API tokens, database connection strings)." | Any custom key name.
+| kubernetes.io/basic-auth | Credentials for HTTP Basic Authentication. | username and password.
+| kubernetes.io/tls | TLS/SSL certificates and associated private key for HTTPS/Ingress encryption. | tls.crt and tls.key.
+| kubernetes.io/dockerconfigjson | "Login credentials to pull images from private registries (Docker Hub, ACR, ECR, GCR)." | .dockerconfigjson
+| kubernetes.io/ssh-auth | Private key used for SSH public/private key authentication. | ssh-privatekey.
+| kubernetes.io/service-account-token | Legacy Service Account bearer tokens for authenticating with the K8s API server. | token.
+| bootstrap.kubernetes.io/token | Tokens used exclusively during the cluster node bootstrapping process. | "token-id, token-secret."
+
+<b>TRY</b><br>
+- Create a Secret using kubectl:-
+
+  Step A:create a standard Opaque secret directly with plain-text literals
+  ```
+  kubectl create secret generic app-db-creds \
+  --from-literal=DB_USER=admin \
+  --from-literal=DB_PASS=SuperSecret123
+  ```
+
+  Step B: Inspect and View the Stored Secret<br>
+  When you list or view the secret via kubectl, you will notice that Kubernetes automatically converts the input values to Base64 strings<br>
+  <b>1. List secrets in your namespace:</b>```kubectl get secrets```<br>
+  <b>2. View the Base64-encoded secret stored in Kubernetes:</b>```kubectl get secret app-db-creds -o yaml```<br>
+  
+  ![alt text](image-19.png)
+
+  <b>3. Decode the secret back into plain text:</b>
+
+  ![alt text](image-20.png)
+
+
+<b>How a Pod or Deployment Consumes the Secret</b><br>
+  Pods and Deployments can inject secret values in two ways: Environment Variables or Volume Mounts
+
+  <b>Option 1</b>: Injecting Secrets as Environment Variables<br>
+    This method injects each secret key directly into container environment variables.
+    Save this as ```deployment-env.yaml``` and ```run kubectl apply -f deployment-env.yaml```
+    
+  ```
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: my-app-env
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: my-app
+    template:
+      metadata:
+        labels:
+          app: my-app
+      spec:
+        containers:
+        - name: web
+          image: nginx:alpine
+          env:
+          # Load single key into DB_USERNAME variable
+          - name: DB_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: app-db-creds
+                key: DB_USER
+          # Load single key into DB_PASSWORD variable
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: app-db-creds
+                key: DB_PASS
+  ```
+  verify using ```kubectl exec -it deployment/my-app-env -- printenv```
+
+  ![alt text](image-21.png)
+
+<b>Option 2</b>: : Mounting Secrets as Files in a Volume (Recommended)
+
+  This mounts the keys as plain-text files inside a directory on the container's file system
+
+  Save this as ```deployment-volume.yaml``` and run ```kubectl apply -f deployment-volume.yaml```
+
+  ```
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: my-app-volume
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: my-app
+    template:
+      metadata:
+        labels:
+          app: my-app
+      spec:
+        containers:
+        - name: web
+          image: nginx:alpine
+          volumeMounts:
+          # Mount path inside the container
+          - name: secret-volume
+            mountPath: "/etc/secrets"
+            readOnly: true
+        volumes:
+        - name: secret-volume
+          secret:
+            secretName: app-db-creds
+  ```
+
+  verify using 
+  ```
+  # Check files created in the mounted folder
+  kubectl exec -it deployment/my-app-volume -- ls /etc/secrets
+  # Output: DB_PASS  DB_USER
+
+  # Read file content
+  kubectl exec -it deployment/my-app-volume -- cat /etc/secrets/DB_PASS
+  # Output: SuperSecret123
+  ```
+
+<b>Quick Examples for Other Common Secret Types</b><br>
+TLS Secret (For Ingress)
+```
+# Create from certificate and private key files
+kubectl create secret tls tls-app-cert \
+  --cert=path/to/tls.crt \
+  --key=path/to/tls.key
+```
+Docker Registry Secret (To Pull Private Container Images)
+```
+kubectl create secret docker-registry my-registry-secret \
+  --docker-server=https://index.docker.io/v1/ \
+  --docker-username=myuser \
+  --docker-password=mypassword \
+  --docker-email=myuser@example.com
+```
+Usage in Pod: Add ```imagePullSecrets: [{name: my-registry-secret}]``` under ```spec:``` in your Pod or Deployment manifest.
+
+![alt text](image-23.png)
+
+![alt text](image-24.png)
+
+```
+NOTE: if two or more deployment has same label then  
+kubectl exec -it deployment/my-app-volume -- ls /etc/secrets
+will return error
+```
+
+</dev>
+</details>
+
+<details>
+<summary>
+<b>File- System</b>
+</summary>
+<dev>
+
+root file system of kubectl which follows linux filesystem
+![alt text](image-25.png)
+
+```
+# 1. Open an interactive shell inside a running pod
+kubectl exec -it <pod-name> -- sh
+
+# 2. List all mounted file systems inside a running pod
+kubectl exec -it <pod-name> -- df -h
+
+# 3. Inspect mounted files in a specific directory
+kubectl exec -it <pod-name> -- ls -la /etc/secrets
+
+# 4. View PersistentVolumes (PV) and Claims (PVC) in your cluster
+kubectl get pv
+kubectl get pvc
+```
+![alt text](image-26.png)
+![alt text](image-27.png)
+</dev>
+</details>
+
 </dev>
 </details>
 <!-- END OF CONFIGURATION -->
