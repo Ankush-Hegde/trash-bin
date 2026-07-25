@@ -1269,7 +1269,7 @@ to see the job pods
 you can see the logs using the pod logs or job logs
 ![alt text](image-13.png)
 
-<b>CronJob</b>:- A CronJob starts one-time Jobs on a repeating schedule.
+<b>CronJob</b>:- A CronJob starts one-time Jobs on a repeating schedule.<br>
 cronjob.yaml
 ```
 apiVersion: batch/v1
@@ -1311,7 +1311,7 @@ spec:
 </details>
 <!-- Cluster Architecture END -->
 
-------------------------------------------------------------
+-----------------------------------------------------------------------------------------
 
 <!-- 
 <details>
