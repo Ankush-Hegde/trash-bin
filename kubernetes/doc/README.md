@@ -1312,6 +1312,102 @@ spec:
 <!-- Cluster Architecture END -->
 
 -----------------------------------------------------------------------------------------
+<details>
+<summary>
+<b>Configuration</b>
+</summary>
+<dev>
+
+<details>
+<summary>
+<b>ConfigMap</b>
+</summary>
+<dev>
+
+A ConfigMap is an API object used to store non-confidential data in key-value pairs. Pods can consume ConfigMaps as environment variables, command-line arguments, or as configuration files in a volume.
+
+A ConfigMap allows you to decouple environment-specific configuration from your container images, so that your applications are easily portable.
+
+example key value pare that can be stored in config map is DB-URL
+
+<b>ConfigMap object</b><br>
+A ConfigMap is an API object that lets you store configuration for other objects to use. Unlike most Kubernetes objects that have a spec, a ConfigMap has data and binaryData fields. These fields accept key-value pairs as their values. Both the data field and the binaryData are optional. The data field is designed to contain UTF-8 strings while the binaryData field is designed to contain binary data as base64-encoded strings.
+
+The name of a ConfigMap must be a valid DNS subdomain name.
+
+<b>ConfigMaps and Pods</b><br>
+You can write a Pod spec that refers to a ConfigMap and configures the container(s) in that Pod based on the data in the ConfigMap. The Pod and the ConfigMap must be in the same namespace.
+
+![alt text](image-14.png)
+
+Here's an example ConfigMap that has some keys with single values, and other keys where the value looks like a fragment of a configuration format.
+```
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: game-demo
+data:
+  # property-like keys; each key maps to a simple value
+  player_initial_lives: "3"
+  ui_properties_file_name: "user-interface.properties"
+
+  # file-like keys
+  game.properties: |
+    enemy.types=aliens,monsters
+    player.maximum-lives=5
+  user-interface.properties: |
+    color.good=purple
+    color.bad=yellow
+    allow.textmode=true
+```
+create a config map using ```kubectl create configmap <NAME>```
+
+The following ConfigMap (myconfigmap.yaml) stores three properties: username, game.properties and access_level:
+```
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: myconfigmap
+data:
+  username: k8s-admin
+  access_level: "1"
+  game.properties: |
+    enemy.types=aliens,monsters
+    player.maximum-lives=5
+```
+![alt text](image-15.png)
+![alt text](image-16.png)
+
+you can make Pod consumes the content of the ConfigMap as environment variables by following spec:<br>
+env-configmap.yaml
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: env-configmap
+spec:
+  containers:
+    - name: app
+      command: ["/bin/sh", "-c", "printenv"]
+      image: busybox:latest
+      envFrom:
+        - configMapRef:
+            name: myconfigmap
+```
+run this command ```kubectl apply -f env-configmap.yaml``` then ```kubectl logs pod/env-configmap```
+![alt text](image-17.png)
+
+create and delete config map:-<br>
+to delete config map ``` kubectl delete configmap <name> ```
+![alt text](image-18.png)
+</dev>
+</details>
+
+</dev>
+</details>
+<!-- END OF CONFIGURATION -->
+
+-----------------------------------------------------------------------------
 
 <!-- 
 <details>
