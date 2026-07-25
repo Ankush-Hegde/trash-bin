@@ -1213,7 +1213,7 @@ A StatefulSet runs a group of Pods, and maintains a sticky identity for each of 
 StatefulSets are valuable for applications that require one or more of the following:
 
 - Stable, unique network identifiers.
-- Stable, persistent storage.
+- Stable, persistent storage. (like database)
 - Ordered, graceful deployment and scaling.
 - Ordered, automated rolling updates.
 
@@ -1223,6 +1223,87 @@ StatefulSets are valuable for applications that require one or more of the follo
 ![alt text](image-9.png)
 <b>Stateful Pod Names</b>: If this were a StatefulSet, the Pods would have predictable, zero-indexed integer suffixes instead, such as nginx-0, nginx-1, and nginx-2.
 
+</dev>
+</details>
+
+<details>
+<summary>
+<b>Jobs</b>
+</summary>
+<dev>
+
+Jobs represent one-off tasks that run to completion and then stop.
+
+A Job creates one or more Pods and will continue to retry execution of the Pods until a specified number of them successfully terminate. As pods successfully complete, the Job tracks the successful completions. When a specified number of successful completions is reached, the task (ie, Job) is complete. Deleting a Job will clean up the Pods it created. Suspending a Job will delete its active Pods until the Job is resumed again.
+
+A simple case is to create one Job object in order to reliably run one Pod to completion. The Job object will start a new Pod if the first Pod fails or is deleted (for example due to a node hardware failure or a node reboot).
+
+You can also use a Job to run multiple Pods in parallel.
+
+jobs.yaml
+```
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+spec:
+  template:
+    spec:
+      containers:
+      - name: pi
+        image: perl:5.34.0
+        command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+      restartPolicy: Never
+  backoffLimit: 4
+
+```
+use ```kubectl apply -f jobs.yaml```
+![alt text](image-10.png)
+
+use ```kubectl describe job pi``` or ```kubectl describe job```
+![alt text](image-11.png)
+
+to see the job pods
+![alt text](image-12.png)
+
+you can see the logs using the pod logs or job logs
+![alt text](image-13.png)
+
+<b>CronJob</b>:- A CronJob starts one-time Jobs on a repeating schedule.
+cronjob.yaml
+```
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hello
+            image: busybox:1.28
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure
+```
+```
+# ┌───────────── minute (0 - 59)
+# │ ┌───────────── hour (0 - 23)
+# │ │ ┌───────────── day of the month (1 - 31)
+# │ │ │ ┌───────────── month (1 - 12)
+# │ │ │ │ ┌───────────── day of the week (0 - 6) (Sunday to Saturday)
+# │ │ │ │ │                                   OR sun, mon, tue, wed, thu, fri, sat
+# │ │ │ │ │
+# │ │ │ │ │
+# * * * * *
+```
+```For example, 0 3 * * 1 means this task is scheduled to run weekly on a Monday at 3 AM```
 </dev>
 </details>
 
