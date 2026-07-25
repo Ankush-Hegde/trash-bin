@@ -314,10 +314,54 @@ then Run:
 ```
 kubectl apply -f pod.yaml
 ```
-check
+get or check pods
 ```
 kubectl get pods
 ```
+outpur:
+```
+NAME                     READY   STATUS    RESTARTS      AGE
+nginx                    1/1     Running   4 (28s ago)   40d
+nginx-78c44574cd-2sbtz   0/1     Error     2             26d
+nginx-78c44574cd-f4j44   1/1     Running   3 (28s ago)   26d
+nginx-78c44574cd-xghfd   0/1     Error     2             26d
+```
+
+You can inspect a Pod's conditions using kubectl:
+```
+kubectl get pod <pod-name> -o yaml
+```
+output:
+```
+status:
+  conditions:
+    - type: PodScheduled
+      status: "True"
+      lastProbeTime: null
+      lastTransitionTime: "2026-03-29T08:52:21Z"
+      observedGeneration: 1
+    - type: PodReadyToStartContainers
+      status: "True"
+      lastProbeTime: null
+      lastTransitionTime: "2026-04-11T06:02:16Z"
+      observedGeneration: 1
+    - type: Initialized
+      status: "True"
+      lastProbeTime: null
+      lastTransitionTime: "2026-03-29T08:52:21Z"
+      observedGeneration: 1
+    - type: ContainersReady
+      status: "True"
+      lastProbeTime: null
+      lastTransitionTime: "2026-04-11T06:02:45Z"
+      observedGeneration: 1
+    - type: Ready
+      status: "True"
+      lastProbeTime: null
+      lastTransitionTime: "2026-04-11T06:02:45Z"
+      observedGeneration: 1
+```
+
 </dev>
 </details>
 
@@ -1057,7 +1101,130 @@ To see which Kubernetes resources are and aren't in a namespace:
 </dev>
 </details>
 
+<details>
+<summary>
+<b>probes</b>
+</summary>
+<dev>
 
+  Kubernetes lets you define probes to continuously monitor the health of containers in a Pod. A probe is a diagnostic performed periodically by the kubelet on a container. To perform a diagnostic, the kubelet either executes code within the container or makes a network request.
+
+  Based on the probe results, Kubernetes can restart unhealthy containers or stop sending traffic to containers that are not ready.
+
+  <b>Types of probe</b><br>
+  The kubelet can optionally perform and react to three kinds of probes on running containers, each serving a different purpose:
+
+  - Startup probe
+  - Liveness probe
+  - Readiness probe
+
+  <b>Startup probe</b><br>
+  Startup probes verify whether the application within a container is started. If a startup probe is configured, Kubernetes does not execute liveness or readiness probes until the startup probe succeeds, allowing the application time to finish its initialization.
+
+  This type of probe is only executed at startup, unlike liveness and readiness probes, which are run periodically. If the startup probe fails, the kubelet kills the container, and the container is subjected to its restart policy.
+
+  <b>Liveness probe</b><br>
+  Liveness probes determine when to restart a container. For example, liveness probes could catch a deadlock, where an application is running, but unable to make progress. Restarting a container in such a state can help to make the application more available despite bugs.
+
+  If a container fails its liveness probe more times than the configured tolerance, the kubelet restarts that container. Liveness probes do not wait for readiness probes to succeed. If you want to wait before executing a liveness probe, you can either define initialDelaySeconds or use a startup probe.
+
+  <b>Readiness probe</b><br>
+  Readiness probes determine when a container is ready to accept traffic. This is useful when waiting for an application to perform time-consuming initial tasks, such as establishing network connections, loading files, and warming caches. Readiness probes can also be useful later in the container’s lifecycle, for example, when recovering from temporary faults or overloads.
+
+  If the readiness probe returns a failed state, the EndpointSlice controller removes the Pod's IP address from the EndpointSlices of all Services that match the Pod.
+
+  Readiness probes run on the container during its whole lifecycle.
+
+</dev>
+</details>
+
+<details>
+<summary>
+<b>ReplicaSet</b>
+</summary>
+<dev>
+
+A ReplicaSet's purpose is to maintain a stable set of replica Pods running at any given time. Usually, you define a Deployment and let that Deployment manage ReplicaSets automatically.
+
+A ReplicaSet's purpose is to maintain a stable set of replica Pods running at any given time. As such, it is often used to guarantee the availability of a specified number of identical Pods.
+
+Example: save below config to file and run ```kubectl apply -f <filename.yaml>```
+```
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: frontend
+  labels:
+    app: guestbook
+    tier: frontend
+spec:
+  # modify replicas according to your case
+  replicas: 3
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: php-redis
+        image: us-docker.pkg.dev/google-samples/containers/gke/gb-frontend:v5
+```
+check below to see the replica-set
+![alt text](image-7.png)
+
+<b>ReplicaSet as a Horizontal Pod Autoscaler Target</b><br>
+A ReplicaSet can also be a target for Horizontal Pod Autoscalers (HPA). That is, a ReplicaSet can be auto-scaled by an HPA. 
+
+hpa-rs.yaml
+```
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend-scaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: ReplicaSet
+    name: frontend
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 50
+```
+alternative to this we can run ```kubectl autoscale rs frontend --max=10 --min=3 --cpu=50%```
+
+```
+Note: recommended to use deployments instead of replicaset.
+```
+
+</dev>
+</details>
+
+<details>
+<summary>
+<b>StatefulSets</b>
+</summary>
+<dev>
+
+A StatefulSet runs a group of Pods, and maintains a sticky identity for each of those Pods. This is useful for managing applications that need persistent storage or a stable, unique network identity.
+
+StatefulSets are valuable for applications that require one or more of the following:
+
+- Stable, unique network identifiers.
+- Stable, persistent storage.
+- Ordered, graceful deployment and scaling.
+- Ordered, automated rolling updates.
+
+![alt text](image-8.png)
+<b>Stateless Pod Names</b>: The names consist of [deployment-name]-[template-hash]-[random-string]. If a Pod terminates, it is replaced by a completely new random string.
+
+![alt text](image-9.png)
+<b>Stateful Pod Names</b>: If this were a StatefulSet, the Pods would have predictable, zero-indexed integer suffixes instead, such as nginx-0, nginx-1, and nginx-2.
+
+</dev>
+</details>
 
 </dev>
 </details>
