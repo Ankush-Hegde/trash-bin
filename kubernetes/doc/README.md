@@ -243,6 +243,10 @@ Cluster
  ├── Node2
  └── Node3
  ```
+
+ - apiVersion: v1 → Works for Service, Pod, Namespace, Secret, ConfigMap.
+ - apiVersion: apps/v1 → Works for Deployment, StatefulSet, DaemonSet.
+
 <details>
 <summary>
  <b>Node</b>
@@ -876,6 +880,39 @@ spec:
     ports:
       - containerPort: 80
         name: http-web-svc
+```
+
+Use three hyphens (---) as a separator between each distinct Kubernetes object block (below is the service and deployment)
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-container
+        image: nginx:latest
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-service
+spec:
+  selector:
+    app: my-app
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
 ```
 
 Application protocol:
@@ -1645,7 +1682,106 @@ Selectors allow you to query and filter Kubernetes objects based on their labels
 | Deployment | Yes (spec.template.metadata.labels) | Yes (spec.selector) | "Uses selectors to manage and track its Pods, and applies labels to any new Pods it creates." |
 
 
+<b>TRY</b>
+<br>
+Example 1: Defining Labels in a Pod Spec
+Here is a YAML manifest for a Pod with two labels: ```environment: production``` and ```app: webserver```.
 
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    environment: production
+    app: webserver
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80
+```
+Example 2: Target Pods with a Kubernetes Service
+A Service uses a label selector to automatically route traffic to any Pod that matches its criteria.
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+spec:
+  selector:
+    app: webserver
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+```
+```How it works:``` Any Pod with ```app: webserver``` label attached will automatically receive traffic sent to ```web-service``` selector
+
+below you can see the pod labels
+![alt text](image-28.png)
+
+below image shows the deployment selector
+![alt text](image-29.png)
+<br>
+<br><b> in deployments you can see multiple labels</b>
+ 
+| Location | Attached To | Used By | What Happens If You Change It? |
+|-----------|------------|---------|--------------------------------|
+| ```metadata.labels``` | Deployment | You / Ops scripts | Only changes how you filter Deployment objects via kubectl. | 
+| ```spec.template.metadata.labels``` | Pods | "Services, Ingress, Monitoring" | Controls traffic routing and pod-level identification. | 
+| ```spec.selector.matchLabels```  | Deployment Rule | Deployment Controller | Tells the Deployment which pods to track and maintain. | 
+
+Example 3: Advanced Set-Based Selection in Deployments<br>
+Newer objects (like Deployments, ReplicaSets, and Jobs) support complex set-based selectors using ```matchLabels``` and ```matchExpressions```
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frontend
+    matchExpressions:
+      - key: environment
+        operator: In
+        values: [production, staging]
+      - key: tier
+        operator: NotIn
+        values: [backend]
+  template:
+    metadata:
+      labels:
+        app: frontend
+        environment: production
+        tier: web
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+```
+Example 4: CLI Filtering with kubectl<br>
+You can use the ```-l``` or ```--selector``` flag in kubectl to filter resources dynamically:
+
+ - Equality filtering: ```kubectl get pods -l environment=production,app=webserver```
+ - Set-based filtering: ```kubectl get pods -l 'environment in (production, staging)'```
+ - Check key existence:```kubectl get pods -l 'environment'```
+ - Add or update labels on the fly:```kubectl label pods nginx-pod tier=frontend```
+
+
+</dev>
+</details>
+
+<details>
+<summary>
+<b>Ingress</b>
+</summary>
+<dev>
+
+jjj
 
 </dev>
 </details>
@@ -1655,6 +1791,8 @@ Selectors allow you to query and filter Kubernetes objects based on their labels
 <!-- END OF CONFIGURATION -->
 
 -----------------------------------------------------------------------------
+
+
 
 <!-- 
 <details>
