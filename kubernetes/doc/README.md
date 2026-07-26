@@ -223,6 +223,7 @@ https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#-strong-
 
 <!-- OVERVEW END -->
 
+----------------------------------------------------------------------
 
 <!-- Cluster Architecture END -->
 <details>
@@ -1605,6 +1606,47 @@ kubectl get pvc
 ```
 ![alt text](image-26.png)
 ![alt text](image-27.png)
+</dev>
+</details>
+
+<details>
+<summary>
+<b>Labels and Selectors</b>
+</summary>
+<dev>
+In Kubernetes, Labels and Selectors are the foundational grouping primitives that organize, filter, and select sets of resources (like Pods, Services, and Deployments).<br><br>
+
+<b>Labels</b><br>
+Labels are key/value pairs that are attached to objects such as Pods. Labels are intended to be used to specify identifying attributes of objects that are meaningful and relevant to users, but do not directly imply semantics to the core system. Labels can be used to organize and to select subsets of objects. Labels can be attached to objects at creation time and subsequently added and modified at any time. Each object can have a set of key/value labels defined. Each Key must be unique for a given object.[if key is not unique you will face an error while getting or applying]
+
+Rules & Constraints:
+
+ - Key: Max 63 characters (plus an optional DNS subdomain prefix followed by a ```/```). The prefixes ```kubernetes.io/ ```and ```k8s.io/``` are reserved for core Kubernetes components.
+
+ - Value: Max 63 characters (can be empty), must begin and end with an alphanumeric character (```a-z```, ```0-9```, ```A-Z```), and can include ```-```, ```_```, or ```.```.
+
+<b>Label selectors</b><br>
+Selectors allow you to query and filter Kubernetes objects based on their labels.
+
+ 1. Equality-Based Selectors: Filter by exact match or inequality (```=```, ```==```, ```!=```).
+
+    - Example: ```environment=production,tier!=frontend```
+
+ 2. Set-Based Selectors: Filter by sets of values using in, notin, or key existence (exists, !key).
+
+    - Example: ```environment in (production, qa)``` or ```tier notin (frontend, backend)```
+
+<br>
+
+| Object | Uses Labels? | Uses Selectors? | Role |
+|--------|--------------|-----------------|------|
+| Pod | Yes (metadata.labels) | No | Wears the tags/labels so other resources can identify it. |
+| Service | Optional (can label itself) | Yes (spec.selector) | Uses selectors to find and route network traffic to Pods. |
+| Deployment | Yes (spec.template.metadata.labels) | Yes (spec.selector) | "Uses selectors to manage and track its Pods, and applies labels to any new Pods it creates." |
+
+
+
+
 </dev>
 </details>
 
