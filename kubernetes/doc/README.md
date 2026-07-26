@@ -1781,7 +1781,146 @@ You can use the ```-l``` or ```--selector``` flag in kubectl to filter resources
 </summary>
 <dev>
 
-jjj
+In Kubernetes, an Ingress is an API object that manages external access to HTTP and HTTPS services inside a cluster. It acts as an entry point or smart router, providing features like:
+
+ - Host-based and path-based routing (e.g., routing [example.com/api](https://example.com/api) to service A and [example.com/app](https://example.com/app) to service B).
+
+ - SSL/TLS Termination (decrypting HTTPS requests at the edge before sending plaintext HTTP traffic to internal services).
+
+ - Load balancing across backend Pods.
+
+Core Concepts: Ingress Resource vs. Ingress Controller
+ 1. Ingress Resource: A YAML configuration defining routing rules, hostnames, and paths. Creating an Ingress resource alone does nothing by itself.
+
+ 2. Ingress Controller: The actual software (like NGINX, HAProxy, or Traefik) running inside the cluster that evaluates the Ingress resources and configures a reverse proxy to route real network traffic.
+
+<b>TRY(local)</b><br>
+Step 1: Enable the Ingress Addon in Minikube<br>
+Minikube comes with an NGINX Ingress Controller pre-bundled as an addon.
+
+```
+# Start Minikube (if not already running)
+minikube start
+
+# Enable the NGINX Ingress controller addon
+minikube addons enable ingress
+```
+Verify that the Ingress controller pods are running in the ```ingress-nginx``` namespace with ```kubectl get pods -n ingress-nginx```
+
+![alt text](image-30.png)
+
+Step 2: Deploy Sample Applications and Services<br>
+Create two lightweight web applications (```web-one``` and ```web-two```) to test path-based routing.
+
+```
+# Create the first deployment and expose it
+kubectl create deployment web-one --image=gcr.io/google-samples/hello-app:1.0
+kubectl expose deployment web-one --port=8080 --type=ClusterIP
+
+# Create the second deployment and expose it
+kubectl create deployment web-two --image=gcr.io/google-samples/hello-app:2.0
+kubectl expose deployment web-two --port=8080 --type=ClusterIP
+```
+
+![alt text](image-31.png)
+
+Step 3: Create an Ingress Resource<br>
+Create a file named ```example-ingress.yaml```:
+
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-ingress
+  annotations:
+    # Rewrite path so request to /app1 goes to / on the backend container
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /app1(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: web-one
+            port:
+              number: 8080
+      - path: /app2(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: web-two
+            port:
+              number: 8080
+```
+Apply the Ingress manifest: ```kubectl apply -f example-ingress.yaml```<br>
+
+Check the status of your Ingress object:```kubectl get ingress example-ingress```
+![alt text](image-32.png)
+
+Step 4: Test Your Ingress Setup<br>
+Get the Minikube IP address:```minikube ip```
+Access the routes in your browser or via curl:
+
+Test App 1: curl http://<MINIKUBE_IP>/app1 (Returns output from hello-app:1.0)
+
+Test App 2: curl http://<MINIKUBE_IP>/app2 (Returns output from hello-app:2.0)
+
+```Note for macOS/Windows Users: If accessing <MINIKUBE_IP> directly is blocked due to Docker Desktop networking limitations, run minikube tunnel in a separate terminal window and access http://localhost/app1 instead.```
+
+![alt text](image-33.png)
+![alt text](image-34.png)
+
+
+<b>Syntax and example</b>
+
+```
+# SYNTAX
+kubectl create ingress <INGRESS_NAME> \
+  --rule="<HOST>/<PATH>=<SERVICE_NAME>:<SERVICE_PORT>" \
+  [--class=<INGRESS_CLASS>] \
+  [--annotation=<KEY=VALUE>]
+```
+Examples:<br>
+A. Simple Path-Based Ingress (No Host)<br>
+Routes traffic from ```/app``` on any host to a backend service named web-service on port ```80```:
+
+```
+kubectl create ingress simple-ingress \
+  --rule="/app*=web-service:80" \
+  --class=nginx
+```
+
+B. Host-Based Ingress<br>
+Routes traffic for ```[myapp.example.com/](https://myapp.example.com/)``` to ```web-service``` on port ```8080```:
+
+```
+kubectl create ingress host-ingress \
+  --rule="myapp.example.com/=web-service:8080" \
+  --class=nginx
+```
+
+C. Multi-Path & Multi-Host Ingress<br>
+Routes different paths and hosts to different services:
+```
+kubectl create ingress multi-ingress \
+  --rule="api.example.com/=api-service:3000" \
+  --rule="example.com/web*=web-service:80" \
+  --class=nginx
+```
+
+D. Ingress with Annotations and TLS<br>
+Include NGINX annotations (like path rewriting) and configure TLS with a pre-existing TLS Secret:
+```
+kubectl create ingress tls-ingress \
+  --rule="secure.example.com/*=my-service:80" \
+  --annotation="nginx.ingress.kubernetes.io/rewrite-target=/" \
+  --tls="my-tls-secret" \
+  --class=nginx
+```
+
 
 </dev>
 </details>
