@@ -1931,6 +1931,623 @@ kubectl create ingress tls-ingress \
 
 -----------------------------------------------------------------------------
 
+<details>
+<summary>
+<b>Storage, Helm and HPA</b>
+</summary>
+<dev>
+
+<details>
+<summary>
+<b>Understanding PVs and PVCs in Kubernetes</b>
+</summary>
+<dev>
+
+In Kubernetes, managing storage is decoupled from managing compute workloads (Pods). Think of it like renting an apartment:
+
+ - PersistentVolume (PV): The actual physical/cloud storage asset (the building/apartment). It exists independently of any Pod.
+
+ - PersistentVolumeClaim (PVC): The request for storage (the lease agreement). A developer requests a specific size and access mode, and Kubernetes binds it to a matching PV.
+
+Key Lifecycle Stages
+1. Provisioning:
+    - Static: An admin manually creates PVs upfront.
+    - Dynamic: Kubernetes creates PVs on-demand using a StorageClass when a PVC is created.
+
+2. Binding: Kubernetes matches a PVC to an available PV based on capacity, access mode, and storage class.
+
+3. Using: A Pod references the PVC in its volume definition to mount the storage into a container directory.
+
+4. Reclaiming: When you delete a PVC, the PV's persistentVolumeReclaimPolicy determines what happens next:
+
+    - ```Retain```: PV remains intact with all data; admin manually cleans it up.
+    - ```Delete```: Associated storage asset (e.g., AWS EBS volume, GCP Persistent Disk) is automatically deleted.
+    - ```Recycle```: (Deprecated) Performs a basic cleanup (```rm -rf /volume/*```) to reuse the volume
+
+Access Modes:-
+
+| Access Mode | Abbreviation | Description |
+|------------|---------------|-----------|
+| ReadWriteOnce | RWO | Mounted as read-write by a single node. |
+| ReadOnlyMany | ROX | Mounted as read-only by many nodes simultaneously. |
+| ReadWriteMany | RWX | Mounted as read-write by many nodes simultaneously. |
+| ReadWriteOncePod | RWOP | Mounted as read-write by a single Pod across the cluster. |
+
+<b>TRY</b><br>
+Step 1: Create the PersistentVolume (```pv.yaml```)
+```
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: app-pv
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: "/mnt/data"
+```
+Apply the PV: ```kubectl apply -f pv.yaml```
+
+Step 2: Create the PersistentVolumeClaim (```pvc.yaml```)
+```
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: manual
+  resources:
+    requests:
+      storage: 1Gi
+```
+Apply the PVC: ```kubectl apply -f pvc.yaml```
+
+Step 3: Mount the PVC in a Pod (```pod.yaml```)
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-pod
+  namespace: default
+spec:
+  containers:
+    - name: web-app
+      image: nginx
+      volumeMounts:
+        - mountPath: "/usr/share/nginx/html"
+          name: storage-volume
+  volumes:
+    - name: storage-volume
+      persistentVolumeClaim:
+        claimName: app-pvc
+```
+Apply the pod: ```kubectl apply -f pod.yaml```
+
+Essential kubectl CLI Commands
+```
+# List all PVs (PVs are cluster-scoped, not bound to a namespace)
+kubectl get pv
+
+# List PVCs in the current namespace
+kubectl get pvc
+
+# Inspect detailed status and events for troubleshooting
+kubectl describe pv app-pv
+kubectl describe pvc app-pvc
+```
+Verifying the Setup
+```
+# Exec into the Pod and write a file to the mounted volume
+kubectl exec -it app-pod -- sh -c "echo 'Hello from PV' > /usr/share/nginx/html/index.html"
+
+# Verify content exists
+kubectl exec -it app-pod -- cat /usr/share/nginx/html/index.html
+```
+Cleanup Order<br>
+When deleting persistent storage resources, always delete them in reverse order of creation:
+```
+# 1. Delete the Pod using the claim
+kubectl delete pod app-pod
+
+# 2. Delete the PersistentVolumeClaim
+kubectl delete pvc app-pvc
+
+# 3. Delete the PersistentVolume
+kubectl delete pv app-pv
+```
+Note on Deletion Protection: If you try to delete a PVC while a Pod is actively using it, the PVC status will show as Terminating. Kubernetes places a finalizer (kubernetes.io/pvc-protection) on active volumes to prevent accidental data loss. Once the Pod is terminated, the PVC will complete its deletion.
+
+![alt text](image-35.png)
+![alt text](image-36.png)
+![alt text](image-37.png)
+![alt text](image-38.png)
+
+</dev>
+</details>
+
+<details>
+<summary>
+<b>Helm</b>
+</summary>
+<dev>
+
+Helm is package manager for Kubernetes.
+
+instead of ```kubectl apply -f 30 files``` you can go with ```helm install myapp chart/```
+
+</dev>
+</details>
+
+<details>
+<summary>
+<b>PDB</b>
+</summary>
+<dev>
+
+A PodDisruptionBudget (PDB) is a Kubernetes resource that limits the number of pods in a replicated application that can be down simultaneously during voluntary disruptions.
+
+It ensures high availability for your applications while allowing cluster administrators to perform maintenance operations, such as draining nodes or upgrading the cluster.
+
+1. Core Concepts: Involuntary vs. Voluntary Disruptions<br>
+Kubernetes distinguishes between two types of disruptions:
+
+    - Involuntary Disruptions: Unavoidable hardware or system failures (e.g., node disk failure, kernel panic, cloud provider VM deletion). PDBs cannot protect against these.
+
+    - Voluntary Disruptions: Actions initiated by cluster admins or automated systems (e.g., kubectl drain to perform node maintenance, cluster autoscaling, or rolling updates). PDBs strictly limit these.
+
+2. Key Fields in a PDB Manifest<br>
+A PDB specification uses two main ways to express availability limits (you can specify only one per PDB):
+
+    - minAvailable: The minimum number (or percentage) of pods that must remain available after an eviction.
+
+    - maxUnavailable: The maximum number (or percentage) of pods that can be unavailable after an eviction.
+
+```Rounding Note: When specifying percentages (e.g., "50%"), Kubernetes always rounds up to the nearest integer. For example, 50% of 7 pods rounds up to 4 pods.```
+
+<b>TRY</b><br>
+Step 1: Deploy a Sample Application<br>
+First, deploy a simple Web deployment with 4 replicas:
+```
+# app-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  labels:
+    app: web
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+```
+Apply the deployment:```kubectl apply -f app-deployment.yaml```
+
+Step 2: Create the PodDisruptionBudget<br>
+Create a PDB that guarantees at least 3 pods remain running at all times (minAvailable: 3 out of 4 replicas).
+```
+# app-pdb.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: web-app-pdb
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: web
+```
+Apply the PDB:```kubectl apply -f app-pdb.yaml```
+
+Step 3: Inspect the PDB Status<br>
+Check the status of your PDB: ```kubectl get poddisruptionbudgets```
+<br>
+output:
+```
+NAME          MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+web-app-pdb   3               N/A               1                     15s
+```
+ALLOWED DISRUPTIONS: 1 indicates that because 4 pods are healthy and minAvailable is 3, Kubernetes will permit evicted or drained nodes to terminate at most 1 pod right now.
+
+Step 4: Test Eviction Behavior<br>
+Simulate a node drain or manual eviction using the kubectl drain or kubectl evict API.
+
+Find the node hosting one of your pods:```kubectl get pods -l app=web -o wide```<br>
+Attempt to drain the node:```kubectl drain <node-name> --ignore-daemonsets --delete-emptydir-data```
+
+What Happens:
+
+ - The Eviction API allows 1 pod to be evicted.
+
+ - The deployment controller immediately schedules a replacement pod on another node.
+
+ - If you attempt to drain a second node holding another pod before the replacement pod becomes Ready, Kubernetes blocks the eviction request and pauses until the available pod count returns to at least 3.
+
+
+<br>
+<b>Advanced Feature: Unhealthy Pod Eviction Policy</b><br>
+Introduced in Kubernetes v1.31 as a stable feature, ```.spec.unhealthyPodEvictionPolicy``` allows you to manage how unhealthy/crashing pods are handled during evictions:
+
+```IfHealthyBudget``` (Default): Running pods that are not yet healthy (e.g., stuck in ```CrashLoopBackOff```) can only be evicted if the application is not already disrupted. This protects newly starting pods, but can block node drains if pods are broken.
+
+```AlwaysAllow```: Unhealthy running pods are treated as already disrupted and can be evicted immediately. This prevents misbehaving or broken applications from indefinitely blocking cluster updates and node drains.
+
+<b>Best Practices Summary</b><br>
+
+Use ```maxUnavailable``` for Autoscaling: Using ```maxUnavailable``` (e.g., ````maxUnavailable: 1```` or ```maxUnavailable: 20%```) automatically adapts as your deployment scales up or down.
+
+Avoid ```minAvailable: 100%``` or ```maxUnavailable: 0```: Setting these values completely blocks ```kubectl drain``` operations on nodes running those pods, causing cluster maintenance to hang indefinitely.
+
+Match Selectors Correctly: Ensure the ```.spec.selector``` in your PDB matches the ```.spec.selector``` in your ```Deployment```, ```StatefulSet```, or ```ReplicaSet```.
+
+</dev>
+</details>
+
+<details>
+<summary>
+<b>HPA</b>
+</summary>
+<dev>
+
+In Kubernetes, a HorizontalPodAutoscaler (HPA) automatically adjusts the number of replica Pods running for a workload (such as a Deployment, ReplicaSet, or StatefulSet) based on observed resource utilization or custom metrics.
+
+Horizontal Scaling vs. Vertical Scaling:
+
+  - Horizontal Scaling (HPA): Adds or removes more Pods to distribute incoming load.
+
+  - Vertical Scaling (VPA): Increases or decreases the resource allocations (CPU/Memory limits and requests) of individual existing Pods.
+
+<b>How HPA Works</b><br>
+HPA runs as a control loop inside the Kubernetes control plane (managed by kube-controller-manager). By default, it checks metrics every 15 seconds (configurable via --horizontal-pod-autoscaler-sync-period).
+
+```
++------------------+        Queries Metrics        +----------------------+
+ | Metrics Server / | <--------------------------- |   HPA Controller     |
+ | Custom API       |                              | (runs every 15s)    |
+ +------------------+                              +----------------------+
+                                                              |
+                                                     Calculates desired
+                                                      replica count
+                                                              |
+                                                              v
+                                                   +----------------------+
+                                                   | Target Deployment /  |
+                                                   | StatefulSet          |
+                                                   +----------------------+
+```
+
+<b>The Scaling Algorithm</b><br>
+The core algorithm calculates desired replicas using the ratio of current metric value to desired target metric value:
+
+$$\text{desiredReplicas} = \left\lceil \text{currentReplicas} \times \frac{\text{currentMetricValue}}{\text{desiredMetricValue}} \right\rceil$$
+
+<br>
+Example: If current CPU usage across Pods is 200m and the target is set to 100m, HPA doubles the replica count 
+
+($\frac{200}{100} = 2.0$)
+
+- Tolerance: The controller ignores small fluctuations if the calculated ratio is within a tolerance band (default is 0.1 or ±10%).
+
+ - Downscale Stabilization: To prevent rapid scaling up and down (known as flapping or thrashing), HPA delays downscaling actions by default for 5 minutes (```--horizontal-pod-autoscaler-downscale-stabilization```).
+
+
+<b>Types of Metrics Supported</b><br>
+Resource Metrics: Built-in container metrics like CPU utilization or Memory usage (requires Metrics Server).
+
+Custom Metrics: Application-specific metrics from tools like Prometheus (e.g., HTTP requests per second, queue depth).
+
+External Metrics: Metrics from external services outside the cluster (e.g., cloud message queues like AWS SQS).
+
+Prerequisite Note: Container specifications must define ```resources.requests``` for target metrics (like CPU/memory) to allow HPA to calculate percentage utilization properly.
+
+
+<b>TRY</b><br>
+
+Step 1: Enable Metrics Server
+HPA requires metric metrics to function. If you are using Minikube, enable it with:```minikube addons enable metrics-server```<br>
+Verify that the metrics server is running and fetching data:
+```
+kubectl get deployment metrics-server -n kube-system
+kubectl top nodes
+```
+
+Step 2: Deploy a Sample Application<br>
+Deploy an Apache web server that performs CPU-intensive computations upon receiving requests.
+
+```
+# app-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-apache
+spec:
+  selector:
+    matchLabels:
+      run: php-apache
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: php-apache
+    spec:
+      containers:
+      - name: php-apache
+        image: registry.k8s.io/hpa-example
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 500m
+          requests:
+            cpu: 200m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: php-apache
+  labels:
+    run: php-apache
+spec:
+  ports:
+  - port: 80
+  selector:
+    run: php-apache
+```
+Apply the configuration:```kubectl apply -f app-deployment.yaml```
+
+Step 3: Create the HorizontalPodAutoscaler<br>
+You can create an HPA imperatively or declaratively.
+
+Option A: Imperative Command ```kubectl autoscale deployment php-apache --cpu-percent=50 --min=1 --max=10```
+
+Option B: Declarative YAML (Recommended)
+
+```
+# hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: php-apache-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: php-apache
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
+```
+
+Apply the HPA manifest:```kubectl apply -f hpa.yaml```<br>
+Check the status of the HPA: ```kubectl get hpa```<br>
+
+output:
+```
+NAME             REFERENCE                   TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+php-apache-hpa   Deployment/php-apache       0%/50%    1         10        1          30s
+```
+
+Step 4: Generate Load to Trigger Autoscaling<br>
+Open a separate terminal window and run a busybox container to send continuous infinite HTTP requests to the ```php-apache```service: ```kubectl run -i --tty load-generator --rm --image=busybox:1.28 --restart=Never -- /bin/sh -c "while true; do wget -q -O- http://php-apache; done"```
+
+Step 5: Observe Scaling in Action<br>
+In your main terminal, watch the HPA status and pod counts update in real time:```kubectl get hpa php-apache-hpa --watch```
+
+As traffic flows, you will see the CPU target percentage rise well above 50%, triggering HPA to scale up replicas up to 10:
+```
+NAME             REFERENCE                   TARGETS    MINPODS   MAXPODS   REPLICAS
+php-apache-hpa   Deployment/php-apache       250%/50%   1         10        5
+php-apache-hpa   Deployment/php-apache       305%/50%   1         10        7
+```
+You can also inspect the running pods: ```kubectl get pods```
+
+Step 6: Stop Load and Observe Downscaling<br>
+Stop the load generator terminal using Ctrl+C.
+
+After the 5-minute stabilization window passes, re-check the HPA status. HPA will scale the deployment back down to 1 replica (```minReplicas```).
+
+Step 7: Cleanup<br>
+Clean up the resources created during this hands-on test:
+```
+kubectl delete hpa php-apache-hpa
+kubectl delete deployment php-apache
+kubectl delete service php-apache
+```
+
+</dev>
+</details>
+
+<details>
+<summary>
+<b>VPA</b>
+</summary>
+<dev>
+
+The Vertical Pod Autoscaler (VPA) automatically adjusts the CPU and memory requests and limits for containers in a Kubernetes workload (such as a Deployment or StatefulSet).
+
+nstead of Horizontal Pod Autoscaling (HPA)—which adds or removes Pod replicas based on load—VPA handles vertical scaling (also known as rightsizing). It increases or decreases the resource capacity of existing Pods to match actual historical and real-time usage.
+
+<b>Core Components</b><br>
+VPA consists of three main components:
+
+  - Recommender: Monitors historical and current resource consumption (via Metrics Server) and calculates target, lower-bound, and upper-bound resource recommendations.
+
+  - Updater: Checks running Pods against VPA recommendations. If Pod resources significantly deviate, it triggers updates (e.g., evicting Pods or resizing them in place).
+
+  - Admission Controller (Mutating Webhook): Intercepts newly created or recreated Pods and injects the recommended CPU/Memory request and limit values before they start.
+
+<b>VPA Update Modes</b><br>
+When defining a VPA object, you configure ```updateMode``` under ```updatePolicy```:
+
+| Update Mode | Behavior |
+|------------|--------|
+| ```Off``` | Generates recommendations only (.status.recommendation). Does not automatically apply changes to Pods. |
+| ```Initial``` | Applies recommendations only during initial Pod creation. It never modifies running Pods. |
+| ```Recreate``` | Evicts existing Pods so they can be recreated with updated resource requests/limits by the workload controller. |
+| ```InPlaceOrRecreate``` | "Attempts to resize Pod resources in-place (without restarting). If in-place resize fails, falls back to Pod eviction." |
+| ```InPlace``` | "Resizes Pod resources strictly in-place. If an update cannot be applied immediately (e.g., insufficient node capacity), it waits and retries without ever evicting the Pod." |
+
+```Note: The Auto update mode is deprecated; use Recreate or InPlaceOrRecreate instead.```
+
+<b>TRY</b><br>
+
+<b>Prerequisites</b><br>
+A Kubernetes cluster (e.g., minikube, kind, or a cloud cluster).
+
+kubectl CLI installed and configured.
+
+Metrics Server installed in your cluster. If not installed on Minikube, run:```minikube addons enable metrics-server```
+
+Step 1: Install VPA in Your Cluster<br>
+Clone the official autoscaling repository and run the installation script:
+```
+git clone https://github.com/kubernetes/autoscaler.git
+cd autoscaler/vertical-pod-autoscaler/
+./hack/vpa-up.sh
+```
+Verify that the VPA components are running:```kubectl get pods -n kube-system | grep vpa```
+
+Step 2: Deploy a Sample Workload<br>
+Create a deployment named ```hamster``` that deliberately generates heavy CPU usage.
+
+Create a file named ```hamster-deployment.yaml```:
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hamster
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hamster
+  template:
+    metadata:
+      labels:
+        app: hamster
+    spec:
+      containers:
+      - name: hamster
+        image: registry.k8s.io/ubuntu-slim:0.14
+        command: ["/bin/sh", "-c", "while true; do md5sum /dev/urandom; done"]
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "50Mi"
+```
+Apply the deployment:```kubectl apply -f hamster-deployment.yaml```
+
+Step 3: Create a VPA Resource<br>
+Create a VPA manifest to target the ```hamster``` deployment. Start with ```updateMode```: ```"Off"``` to inspect recommendations safely first.
+
+Create a file named ```hamster-vpa.yaml```:
+
+```
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: hamster-vpa
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind: Deployment
+    name: hamster
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: 'hamster'
+        minAllowed:
+          cpu: 100m
+          memory: 50Mi
+        maxAllowed:
+          cpu: 1000m
+          memory: 500Mi
+        controlledResources: ["cpu", "memory"]
+```
+Apply the VPA definition: ```kubectl apply -f hamster-vpa.yaml```
+
+
+Step 4: View VPA Recommendations<br>
+Wait 1–2 minutes for the recommender to collect metrics, then describe the VPA resource:```kubectl describe vpa hamster-vpa```<br>
+
+Look for the ```Recommendation``` section near the end of the output:
+```
+Status:
+  Recommendation:
+    Container Recommendations:
+      Container Name:  hamster
+      Target:
+        Cpu:     587m
+        Memory:  26214400
+      Lower Bound:
+        Cpu:     100m
+        Memory:  26214400
+      Upper Bound:
+        Cpu:     1000m
+        Memory:  52428800
+```
+ - Target: The recommended resource allocation for optimal performance.
+
+ - Lower Bound: Minimum recommended resources for the workload.
+
+ - Upper Bound: Maximum recommended allocation based on usage peaks.
+
+Step 5: Enable Automatic Updating (```Recreate```)
+To let VPA update the Pod resources automatically, update ```updateMode``` to ```"Recreate"```.
+
+Edit ```hamster-vpa.yaml``` or run: <br>
+```
+kubectl patch vpa hamster-vpa --type='json' -p='[{"op": "replace", "path": "/spec/updatePolicy/updateMode", "value": "Recreate"}]'
+```
+
+Watch the Pods automatically get evicted and recreated with updated requests:
+```kubectl get pods -w```
+
+Inspect one of the newly created Pods to confirm updated resource requests:
+```
+kubectl get pod <NEW_POD_NAME> -o jsonpath='{.spec.containers[0].resources}'
+```
+
+Key Best Practices & Limitations<br>
+  - VPA vs. HPA Conflict: Avoid using VPA and HPA together on the same resource metrics (e.g., both scaling on CPU/Memory). Doing so causes scaling loops. Exception: You can safely pair VPA (managing CPU/Memory) with HPA (scaling on custom or external metrics like HTTP request counts).
+
+  - Pod Disruption Budgets (PDB): When using Recreate mode, ensure PodDisruptionBudgets are properly configured so VPA evictions don't breach application availability.
+
+  - Limits Handling (controlledValues): By default (RequestsAndLimits), scaling requests will scale limits proportionally based on the ratio defined in your initial manifest. You can set controlledValues: RequestsOnly if you prefer to keep limits static.
+
+</dev>
+</details>
+
+</dev>
+</details>
+<!-- END OF STORAGE, HELM AND HPA -->
+
+-----------------------------------------------------------------------------
 
 
 <!-- 
