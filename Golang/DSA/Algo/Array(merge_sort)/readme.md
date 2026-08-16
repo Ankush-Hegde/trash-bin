@@ -1,0 +1,1 @@
+It's a classic divide-and-conquer algorithm, which works by splitting the array into smaller halves recursively until each sub-array contains only one element. Since a single element is inherently sorted, the algorithm then merges these smaller sorted arrays back together in the correct order.
