@@ -7,3 +7,5 @@ O(n) in the worst case (when the target is at the very end or not in the collect
 O(1) auxiliary space because it searches the collection in-place without copying data
 
 Note:- use on unsorted array, for sorted array binary search works good
+
+![alt text](image.png)

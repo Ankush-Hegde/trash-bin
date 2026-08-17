@@ -5,3 +5,5 @@ $O(\log n)$ because the search space is cut in half with each iteration or recur
 
 ### Space Complexity: 
 O(1) constant space for the iterative loop, or $O(\log n)$ space if using a recursive approach due to the call stack.
+
+![alt text](image.png)
