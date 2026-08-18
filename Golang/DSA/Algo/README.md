@@ -8,8 +8,12 @@
 
 #### operation
 - sorting array 
+    - bubble_sort
+    - heap_sort
+    - insertion_sort
     - merge_sort :- uses divide-and-conquer algorithm.
-    - quick_sort 
+    - quick_sort
+    - selection_sort
 - reversing Array
 - search element
     - linear_search:- can be used on unsorted Array

@@ -4,4 +4,6 @@ Time Complexity: $O(n²)$ across best, average, and worst cases because the algo
 
 Space Complexity: $O(1)$ because the algorithm operates entirely in-place, requiring only a constant amount of extra memory for auxiliary loop variables and index pointers
 
+Stable:- no
+
 ![alt text](image.png)

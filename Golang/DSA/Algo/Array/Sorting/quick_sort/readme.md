@@ -6,4 +6,6 @@ Space Complexity: $O(\log n)$ because the recursive call stack stores stack fram
 
 Note: ```slices.Sort(numbers)``` uses a variation of Quick Sort (specifically pdqsort or Pattern-Defeating QuickSort, which is an optimized hybrid of quicksort, insertion sort, and heapsort)
 
+Stable:- no
+
 ![alt text](image.png)

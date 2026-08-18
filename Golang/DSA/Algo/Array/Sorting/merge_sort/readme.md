@@ -5,4 +5,6 @@ Time Complexity: $O(n \log n)$ across all cases (best, average, and worst) becau
 
 Space Complexity: $O(n)$ because the algorithm requires a temporary auxiliary array of size $n$ to safely compare and merge elements, which completely dominates the concurrent $O(\log n)$ memory used by the recursive call stack frames Merge Sort Space Complexity.
 
+Stable:- yes
+
 ![alt text](image.png)
