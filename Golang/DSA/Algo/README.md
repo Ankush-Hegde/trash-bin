@@ -1,12 +1,18 @@
 ## Algo Readme
 
-<details>
+<details open>
 <summary>
 <b>Array</b>
 </summary>
 <dev>
 
-#### operation
+### operation
+- deleting element
+- inserting element
+- reversing Array
+- search element
+    - linear_search:- can be used on unsorted Array
+    - binary_search:- it works only on sorted Array
 - sorting array 
     - bubble_sort
     - heap_sort
@@ -14,12 +20,6 @@
     - merge_sort :- uses divide-and-conquer algorithm.
     - quick_sort
     - selection_sort
-- reversing Array
-- search element
-    - linear_search:- can be used on unsorted Array
-    - binary_search:- it works only on sorted Array
-- inserting element
-- deleting element
 
 </dev>
 </details>
