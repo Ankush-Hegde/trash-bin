@@ -6,4 +6,4 @@ Space Complexity: $O(1)$ because the algorithm operates entirely in-place, utili
 
 Stable:- yes
 
-![alt text](image.png)
+![alt text](../image.png)

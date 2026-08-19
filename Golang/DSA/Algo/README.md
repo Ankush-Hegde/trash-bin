@@ -8,8 +8,13 @@
 
 ### operation
 - deleting element
+    - by index
+    - by value
 - inserting element
 - reversing Array
+    - print array in reverse
+    - using standard lib
+    - two pointer approach
 - search element
     - linear_search:- can be used on unsorted Array
     - binary_search:- it works only on sorted Array
@@ -20,6 +25,7 @@
     - merge_sort :- uses divide-and-conquer algorithm.
     - quick_sort
     - selection_sort
+- travesal
 
 </dev>
 </details>
