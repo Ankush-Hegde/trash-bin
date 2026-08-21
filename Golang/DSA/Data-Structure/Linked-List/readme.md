@@ -1,0 +1,1 @@
+LL operation merge, detectLoop, removeLoop, findMiddleNode, findNthNodeFromEnd, findIntersectionPoint, checkPalindrome, segregateEvenOdd, addTwoNumbers
