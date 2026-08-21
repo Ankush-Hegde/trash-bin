@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -75,4 +76,28 @@ func main() {
 	// Thai - 5 visual characters take 15 bytes (3 bytes per rune)
 	fmt.Printf("%s -> len(): %d | RuneCount: %d\n",
 		thai, len(thai), utf8.RuneCountInString(thai))
+
+	//--------------------------------------------------
+	fmt.Println("\n--- 5. String Package Functions ---")
+	//--------------------------------------------------
+	greeting := "  Hello, Golang World!  "
+
+	// Clean up whitespace
+	cleaned := strings.TrimSpace(greeting)
+	fmt.Printf("Cleaned: '%s'\n", cleaned) // Output: 'Hello, Golang World!'
+
+	// Search functions
+	fmt.Println(strings.Contains(cleaned, "Golang")) // Output: true
+	fmt.Println(strings.HasPrefix(cleaned, "Hello")) // Output: true
+
+	// Transformation
+	shouting := strings.ToUpper(cleaned)
+	fmt.Println(shouting) // Output: HELLO, GOLANG WORLD!
+
+	// Split and Join
+	words := strings.Split(cleaned, " ")
+	fmt.Println(words) // Output: [Hello, Golang World!]
+
+	joined := strings.Join(words, "-")
+	fmt.Println(joined) // Output: Hello,-Golang-World!
 }

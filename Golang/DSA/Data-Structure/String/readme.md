@@ -11,10 +11,13 @@ Quick Summary: Byte vs. Rune
 | Literal Syntax | Enclosed in single quotes (e.g., 'A') |Enclosed in single quotes (e.g., '🗺️') | 
 | String Behavior | Indexing a string (s[i]) returns a `byte` |Ranging a string (for range s) yields a rune |
 
-1. What is a Byte?<br>
+1. What is a Byte?(only string)<br>
 A byte represents 8 bits of data. Standard English text (ASCII characters like `A`, `b`, `7`, `$`) fits perfectly inside a single byte. However, special characters like accented letters (`é`), non-Latin scripts (`สวัสดี`), or emojis (`🚀`) require anywhere from 2 to 4 bytes to be stored in UTF-8.
-2. What is a Rune?<br>
+2. What is a Rune?(emojies and special character)<br>
 A `rune` represents a single Unicode code point. Because it is a 32-bit integer, it is large enough to represent every single character, symbol, or emoji in existence, regardless of how many bytes it occupies on disk.
+
+- byte = ascii -> for byte you must change it byte('b')
+- rune = unicode -> single quote char are rune 'b'
 
 ⚠️ Essential String Rules to Remember
 - Immutability: Strings cannot be modified in place. `s[0] = 'X'` will throw a compiler error. You must convert the string to a `[]byte` or `[]rune`, make changes, and cast it back to a `string`.
