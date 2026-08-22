@@ -191,7 +191,7 @@ func main() {
 
 	fmt.Printf("-------deletion--------\n")
 	LinkedList = LinkedList.deleteByValue(2)
-	LinkedList.traverse() // Output: 4 -> 3 -> 1 -> nil
+	LinkedList.traverse() // Output: 1 -> 3 -> 4 -> nil
 	LinkedList = LinkedList.deleteAtTail()
 	LinkedList = LinkedList.deleteAtHead()
 	LinkedList.traverse() // Output: 3 -> nil
