@@ -140,8 +140,22 @@ func (n *Node) insertAtHead(data int) *Node {
 	return newHeadNode
 }
 
-// for sorted array we can implement, we need to remember the previous
+// for sorted array we can insert, we need to remember the previous
 // node and current node, and insert the new node in between.
+
+// insert after a given node,
+func (n *Node) insertAfterNode(node *Node, data int) {
+	if node == nil {
+		fmt.Println("The given previous node cannot be nil")
+		return
+	}
+
+	fmt.Printf("inserting data: %d after node %d\n", data, node.data)
+
+	newNode := &Node{data: data, next: nil} // you can set {next: node.next}
+	newNode.next = node.next
+	node.next = newNode
+}
 
 // ---------------------------------insertion -> end---------------------------------
 
@@ -198,4 +212,8 @@ func main() {
 
 	LinkedListSize := LinkedList.length()
 	fmt.Printf("Length of the linked list: %d\n", LinkedListSize) // Output: 1
+
+	fmt.Printf("-------insertAfterNode--------\n")
+	LinkedList.insertAfterNode(LinkedList, 5)
+	LinkedList.traverse() // Output: 3 -> 5 -> nil
 }
