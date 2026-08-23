@@ -9,6 +9,6 @@
 
     ![alt text](merge-two-sorted-LL.png)
  
- - detectLoop
+ - detectLoop ([leatcode](https://leetcode.com/problems/linked-list-cycle/description/))
 
     ![alt text](loop-detection-in-LL.png)
