@@ -24,36 +24,42 @@ func FindMeetingPoint(head *Node) *Node {
 	return nil
 }
 
-// FindLoopEntryPoint finds the exact node where the loop begins
+// FindLoopEntryPoint finds the exact node where the loop begins using equal-speed traversal
 func FindLoopEntryPoint(head *Node) *Node {
+	// Get the meeting point inside the loop (returns nil if no loop)
 	meetingPoint := FindMeetingPoint(head)
 	if meetingPoint == nil {
 		return nil // No cycle, so no entry point
 	}
 
-	slow := head
-	fast := meetingPoint
+	// Find the entry point and the last node of the loop
+
+	// After the fast and slow pointers meet inside the loop, the next step is to find the exact entry point.
+	// You do this by resetting the slow pointer back to the beginning of the list, while the fast pointer stays at the meeting point.
+	// Then, you move both pointers forward one step at a time. Where they meet again is the exact start of the loop.
+	pointerA := head
+	pointerB := meetingPoint
 
 	// Case A: The loop starts right at the head node
-	if slow == meetingPoint {
+	if pointerA == meetingPoint {
 		return head
 	}
 
-	// Case B: Move both one step at a time until they meet at the entry point
-	for slow != fast {
-		slow = slow.Next
-		fast = fast.Next
+	// Case B: Move both pointers one step at a time until they meet at the entry point
+	for pointerA != pointerB {
+		pointerA = pointerA.Next
+		pointerB = pointerB.Next
 	}
 
-	return slow // This is the exact entry point
+	return pointerA // This is the exact entry point
 }
 
-// RemoveLoop detects and removes a loop in the linked list
-func RemoveLoop(head *Node) {
+// FindLastNodeOfLoop finds the final node in the loop that points back to the entry point
+func FindLastNodeOfLoop(head *Node) *Node {
 	// Step 1: Get the meeting point inside the loop (returns nil if no loop)
 	meetingPoint := FindMeetingPoint(head)
 	if meetingPoint == nil {
-		return
+		return nil
 	}
 
 	// Step 2: Find the entry point and the last node of the loop
@@ -69,8 +75,7 @@ func RemoveLoop(head *Node) {
 		for fast.Next != slow {
 			fast = fast.Next
 		}
-		fast.Next = nil
-		return
+		return fast
 	}
 
 	// Case B: The loop starts somewhere inside the list
@@ -80,7 +85,36 @@ func RemoveLoop(head *Node) {
 	}
 
 	// fast now points to the last node of the loop
-	fast.Next = nil
+	return fast
+}
+
+// even this logic finds last node,
+// but not the most efficient way, as it first finds
+// entry point and then traverses the loop to find last node
+func FindLastNodeOfLoop2(head *Node) *Node {
+	entryPoint := FindLoopEntryPoint(head)
+	if entryPoint == nil {
+		return nil // No loop, so no last node
+	}
+
+	curr := entryPoint
+	// Traverse around the loop until we find the node whose Next points to the entry point
+	for curr.Next != entryPoint {
+		curr = curr.Next
+	}
+
+	return curr
+}
+
+// RemoveLoop detects and removes a loop in the linked list using the dedicated functions
+func RemoveLoop(head *Node) {
+	lastNode := FindLastNodeOfLoop(head)
+	if lastNode == nil {
+		return // No loop to remove
+	}
+
+	// Break the cycle
+	lastNode.Next = nil
 }
 
 // Helper function to print the list and show where the loop connects back
@@ -130,6 +164,11 @@ func main() {
 		entryPoint := FindLoopEntryPoint(n1)
 		if entryPoint != nil {
 			fmt.Printf("-> Loop entry point value: %d\n", entryPoint.Value)
+		}
+
+		lastNode := FindLastNodeOfLoop2(n1)
+		if lastNode != nil {
+			fmt.Printf("-> Last node of the loop value: %d\n", lastNode.Value)
 		}
 	} else {
 		fmt.Println("Has cycle: false")
