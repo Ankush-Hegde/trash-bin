@@ -1,0 +1,1 @@
+go through this https://www.geeksforgeeks.org/dsa/function-to-check-if-a-singly-linked-list-is-palindrome/
