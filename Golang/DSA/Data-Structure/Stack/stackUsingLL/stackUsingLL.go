@@ -2,6 +2,10 @@ package main
 
 import "fmt"
 
+type Stack struct {
+	head *Node
+}
+
 type Node struct {
 	data int
 	next *Node
@@ -14,44 +18,72 @@ func NewNode(data int) *Node {
 	}
 }
 
-func (n *Node) pop() *Node {
-	if n == nil {
+func (s *Stack) pop() *int {
+	if s.head == nil {
 		return nil
 	}
-	return n.next
+	data := s.head.data
+	s.head = s.head.next
+	return &data
 }
 
-func (n *Node) push(data int) *Node {
+func (s *Stack) push(data int) {
 	newNode := NewNode(data)
-	newNode.next = n
-
-	return newNode
+	newNode.next = s.head
+	s.head = newNode
 }
 
-func (n *Node) peek() int {
-	if n == nil {
-		return 0
+func (s *Stack) peek() (val *int) {
+	if s.head == nil {
+		return nil
 	}
-	return n.data
+	val = &s.head.data
+	return
 }
 
-func (n *Node) isEmpty() bool {
-	return n == nil
+func (s *Stack) isEmpty() bool {
+	return s.head == nil
 }
 
-func (n *Node) size() {
+func (s *Stack) size() (count int) {
+	current := s.head
+	for current != nil {
+		count++
+		current = current.next
+	}
+	return
+}
 
+func (s *Stack) printStack() {
+	if s.isEmpty() {
+		fmt.Println("Stack is empty")
+		return
+	}
+
+	current := s.head
+	fmt.Print("Stack (top to bottom): \n")
+	for current != nil {
+		fmt.Printf(" | %d | \n", current.data)
+		current = current.next
+	}
+	fmt.Println()
 }
 
 func main() {
-	var stack *Node
+	var stack Stack
 
-	stack = stack.push(4)
-	stack = stack.push(3)
-	stack = stack.push(2)
-	stack = stack.push(1)
+	stack.push(4)
+	stack.push(3)
+	stack.push(2)
+	stack.push(1)
 
-	fmt.Println(stack.data) // 1
-	stack = stack.pop()
+	stack.printStack()
 
+	fmt.Printf("size: %d\n", stack.size())
+	fmt.Printf("peek: %d\n", *stack.peek())
+	fmt.Printf("pop: %d\n", *stack.pop())
+	fmt.Printf("size after pop: %d\n", stack.size())
+	fmt.Printf("is empty: %t\n", stack.isEmpty())
+
+	stack.printStack()
 }
