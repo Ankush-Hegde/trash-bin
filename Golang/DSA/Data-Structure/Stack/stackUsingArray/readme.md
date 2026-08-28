@@ -1,3 +1,4 @@
+Note:-```STACK using dynamic array is not recomended, it may cause memory leak(since under laying array will not shrink). dynamic stack can be implemented using linked list in more efficient way ```
 
 <b>Stack using Dynamic Array</b><br>
 

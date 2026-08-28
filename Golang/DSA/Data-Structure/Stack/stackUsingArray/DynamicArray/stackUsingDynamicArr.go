@@ -25,6 +25,10 @@ func (s *DynamicStack) Pop() (int, error) {
 	}
 	topIndex := len(s.items) - 1
 	data := s.items[topIndex]
+	// this will not shrink the underlying array,
+	// but it will reduce the length of the slice
+	// you can use linked list for a more complex
+	// dynamic array implementation if you want to shrink the underlying array
 	s.items = s.items[:topIndex]
 	return data, nil
 }
