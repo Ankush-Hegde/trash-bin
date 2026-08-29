@@ -30,14 +30,81 @@
 </dev>
 </details>
 
+</dev>
+</details>
+
+<details open>
+<summary>
+<b>Hash map</b>
+</summary>
+<dev>
+
+### operation
+
+- Boyer-Moore mejority element
+
+</dev>
+</details>
+
+<details open>
+<summary>
+<b>Linked List</b>
+</summary>
+<dev>
+
+### operation
+
+- Add two numbers
+    - <b>only readme</b>
+- check palindrome
+    - <b>only readme</b>
+- detect loop
+    - fast and slow pointer method
+- find interaction point
+    - <b>only readme</b>
+- find middle node
+    - fast and slow pointer
+- find nth node from end
+    - head and (n + head) pointer method
+- merge two sorted list
+    - ittrative
+    - recursive
+- remove loop in list
+    - using fast and slow pointer
+- segrate even and odd
+    - <b>only readme</b>
+- sort list
+    - bubble sort
+    - insertion sort
+    - merge sort (Highly Recommended)
+    - quick sort
+
+</dev>
+</details>
+
+<details open>
+<summary>
+<b>Stack</b>
+</summary>
+<dev>
+
+### operation
+
+- valid parentheses
+
+</dev>
+</details>
+
 ----------------------------------------------------------------
 
 <!-- 
-<details>
+<details open>
 <summary>
 <b>next</b>
 </summary>
 <dev>
+
+### operation
 
 jjj
 
