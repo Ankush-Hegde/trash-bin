@@ -90,6 +90,16 @@
 
 ### operation
 
+- Expression Evaluation & Parsing (Infix, Postfix, Prefix)
+    - <b>only readme</b>
+- Next-Greater-Element-(Monotonic Stack)
+    - <b>only readme</b>
+- remove middle element in stack
+    - recursive
+    - using another stack
+- reverse stack
+    - recursive
+    - using another stack
 - valid parentheses
 
 </dev>
