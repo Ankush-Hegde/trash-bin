@@ -40,7 +40,7 @@ func (h *Maxheap) Push(i any) {
 	*h = append(*h, i.(int))
 }
 
-func (h *Maxheap) Pop() any { // always the receiver must Maxheap pointer else you may stuck in loop
+func (h *Maxheap) Pop() any { // always the receiver must be *pointer* else you may stuck in loop ex.*Maxheap
 	old := *h
 	n := len(old)
 	val := old[n-1]
