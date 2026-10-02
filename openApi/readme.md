@@ -53,3 +53,13 @@ Open:
 ```
 http://localhost:8080
 ```
+
+To generate code get the tool from below command
+linux
+```
+wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.25.0/openapi-generator-cli-7.25.0.jar -O openapi-generator-cli.jar
+```
+windows
+```
+Invoke-WebRequest -OutFile openapi-generator-cli.jar https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.25.0/openapi-generator-cli-7.25.0.jar
+```
